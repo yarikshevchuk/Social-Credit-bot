@@ -1,0 +1,24 @@
+{
+  "name": "bing-chiling",
+  "version": "1.0.0",
+  "description": "social credit bot software ",
+  "main": "bot.js",
+  "scripts": {
+    "dev": "nodemon bot.js",
+    "start": "node bot.js"
+  },
+  "keywords": [
+    "bot",
+    "social",
+    "credit"
+  ],
+  "author": "shevchuk26y@gmail.com",
+  "license": "ISC",
+  "dependencies": {
+    "input": "^1.0.1",
+    "mongodb": "^4.6.0",
+    "nodemon": "^2.0.16",
+    "telegraf": "^4.8.1",
+    "telegram": "^2.7.32"
+  }
+}
