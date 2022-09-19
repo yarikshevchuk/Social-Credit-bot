@@ -14,12 +14,13 @@ const stickersLink = "https://t.me/addstickers/SocialCreditCounterStickers";
 
 const start = async () => {
   try {
-    await client.connect();
+    await client.connect(); // Here we connect to the database and to the tables
     const users = client.db().collection("users");
     const chats = client.db().collection("chats");
     console.log("Connection completed");
 
     bot.command("start", async (ctx) => {
+      // Bot start command
       const message = ctx.message;
       const user = new User(chats, users, message);
       const userData = await user.get();
@@ -35,22 +36,12 @@ const start = async () => {
     });
 
     bot.command("help", async (ctx) => {
+      // Help command
       const message = ctx.message;
 
       let response = ` To use this bot you have to install the stickers by the link: \n${stickersLink} \nThen just reply to the message of a person, whose social rating you want to change, using an appropriate sticker `;
 
       ctx.telegram.sendMessage(message.chat.id, response);
-    });
-
-    bot.command("nigga", async (ctx) => {
-      const message = ctx.message;
-      const user = new User(chats, users, message);
-
-      await user.update(-500, "sender");
-      ctx.telegram.sendMessage(
-        message.chat.id,
-        "You said n word, your social credit was decreased"
-      );
     });
 
     bot.command("my_social_credit", async (ctx) => {
