@@ -3,7 +3,7 @@ module.exports = class DataProcessing {
     this.message = message;
   }
 
-  extractReplyToData() {
+  extractReceiverData() {
     let {
       reply_to_message: {
         from: { id, username, first_name, last_name },

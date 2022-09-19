@@ -7,9 +7,7 @@ const dotenv = require("dotenv").config({
   path: `${__dirname}/.env`,
 });
 
-const client = new MongoClient(
-  "mongodb+srv://shev:O8iN0WiRrFmaABqJ@cluster0.9rwd1.mongodb.net/?retryWrites=true&w=majority"
-);
+const client = new MongoClient(dotenv.parsed.MONGO);
 const token = dotenv.parsed.TOKEN;
 const bot = new Telegraf(token); //сюда помещается токен, который дал botFather
 const stickersLink = "https://t.me/addstickers/SocialCreditCounterStickers";
@@ -24,10 +22,10 @@ const start = async () => {
     bot.command("start", async (ctx) => {
       const message = ctx.message;
       const user = new User(chats, users, message);
-      const userData = user.get();
+      const userData = await user.get();
 
       let response = "User already exists";
-
+      console.log(userData);
       if (!userData) {
         await user.add(0);
         response = "User added";
@@ -48,7 +46,7 @@ const start = async () => {
       const message = ctx.message;
       const user = new User(chats, users, message);
 
-      await user.update(-50);
+      await user.update(-500, "sender");
       ctx.telegram.sendMessage(
         message.chat.id,
         "You said n word, your social credit was decreased"
@@ -81,6 +79,7 @@ const start = async () => {
         return;
       }
       const user = new User(chats, users, message);
+      await user.sortUsers();
       const usersList = await user.getUsers();
       const output = await user.printUsers(usersList);
 
@@ -101,30 +100,30 @@ const start = async () => {
 
     bot.on("text", async (ctx) => {
       const message = ctx.message;
-      ctx.telegram.sendPhoto(message.chat.id, gifts.bowlOfRice);
+      // ctx.telegram.sendPhoto(message.chat.id, gifts.bowlOfRice);
+      ctx.telegram.sendMessage(message.chat.id, message.text);
       console.log(message.text, message.from);
-      // console.log(message);
     });
 
     bot.on("sticker", async (ctx) => {
       const message = ctx.message;
       const stickerId = message.sticker.file_unique_id;
-      console.log(stickerId);
+      // console.log(stickerId);
 
       if (!checkData.check(message)) return;
 
       const user = new User(chats, users, message);
 
       if (stickerId === "AgADCR4AAmyzMUo") {
-        await user.update(chats, users, message, 20); // +20 social credit
+        await user.update(20, "receiver"); // +20 social credit
       } else if (stickerId === "AgADwRwAArziMUo") {
-        await user.update(chats, users, message, -20); // -20 social credit
+        await user.update(-20, "receiver"); // -20 social credit
       } else if (stickerId === "AgAD4hcAAjgHOUo") {
-        await user.update(chats, users, message, 15); // +15 social credit
+        await user.update(15, "receiver"); // +15 social credit
       } else if (stickerId === "AgADzxYAAh5YOEo") {
-        await user.update(chats, users, message, -15); // -15 social credit
+        await user.update(-15, "receiver"); // -15 social credit
       } else if (stickerId === "AgAD7BgAAs2SOUo") {
-        await user.update(chats, users, message, -30); // -30 social credit
+        await user.update(-30, "receiver"); // -30 social credit
       }
       // ctx.telegram.sendSticker(
       //   message.chat.id,

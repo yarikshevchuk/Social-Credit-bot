@@ -8,36 +8,48 @@ module.exports = class User {
     this.dataProcessing = new DataProcessing(message);
   }
 
-  async add(rating = 0) {
-    const userData = this.dataProcessing.extractSenderData(this.message);
+  async add(currentRating = 0) {
+    const userData = this.dataProcessing.extractSenderData();
     const user = await this.users.findOne({ _id: userData._id });
 
     if (user) return;
 
-    userData.rating = rating;
+    userData.prevRating = 0;
+    userData.currentRating = currentRating;
     await this.users.insertOne(userData);
 
     console.log("user added");
   }
 
-  async update(rating = 0) {
-    const userData = this.dataProcessing.extractReplyToData(this.message);
+  async update(currentRating = 0, target) {
+    let userData;
+
+    if (target === "receiver") {
+      userData = this.dataProcessing.extractReceiverData();
+    } else if (target === "sender") {
+      userData = this.dataProcessing.extractSenderData();
+    } else {
+      return;
+    }
+
     const user = await this.users.findOne({
       _id: userData._id,
     });
 
     if (user) {
-      user.rating += rating;
+      user.prevRating = currentRating;
+      user.currentRating += currentRating;
       await this.users.updateOne({ _id: userData._id }, { $set: user });
       await this.updateChat(user);
 
       console.log("data updated");
     } else {
-      userData.rating = rating;
+      userData.prevRating = 0;
+      userData.currentRating = currentRating;
       await this.users.insertOne(userData);
       await this.updateChat(userData);
 
-      console.log("user added");
+      console.log("user added but you shouldn't see it");
     }
   }
 
@@ -50,7 +62,7 @@ module.exports = class User {
     }
 
     console.log("user wasn't found");
-    return "";
+    return;
   }
 
   async updateChat(user) {
@@ -61,10 +73,11 @@ module.exports = class User {
 
       await this.chats.updateOne(
         { _id: this.message.chat.id },
-        { $push: { users: this.user._id } }
+        { $push: { users: user._id } }
       );
     } else {
-      const userId = [this.user._id];
+      if (this.message.chat.type === "private") return;
+      const userId = [user._id];
 
       await this.chats.insertOne({ _id: this.message.chat.id, users: userId });
     }
@@ -72,10 +85,11 @@ module.exports = class User {
 
   async getUsers() {
     const chat = await this.chats.findOne({ _id: this.message.chat.id }); // отримуємо необхідний чат
-    const usersInfo = await thisusers
+    const usersInfo = await this.users
       .find({ _id: { $in: chat.users } })
       .toArray();
 
+    const sortedArray = usersInfo.sort(this._sortArr);
     return usersInfo;
   }
 
@@ -93,5 +107,22 @@ module.exports = class User {
     });
 
     return line;
+  }
+
+  async sortUsers() {
+    await this.users.aggregate([
+      { $group: { _id: "$username" } },
+      { $sort: { rating: -1 } },
+    ]);
+  }
+
+  _sortArr(a, b) {
+    if (a.rating > b.rating) {
+      return -1;
+    } else if (a.rating < b.rating) {
+      return 1;
+    } else {
+      return 0;
+    }
   }
 };
