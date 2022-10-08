@@ -1,4 +1,5 @@
-const DataProcessing = require("./data-processing");
+const DataProcessing = require("./data_processing");
+const userSchema = require("./schemas/user_schema");
 
 module.exports = class User {
   constructor(chats, users, message) {
@@ -37,7 +38,7 @@ module.exports = class User {
     });
 
     if (user) {
-      user.prevRating = currentRating;
+      user.prevRating = user.currentRating;
       user.currentRating += currentRating;
       await this.users.updateOne({ _id: userData._id }, { $set: user });
       await this.updateChat(user);
@@ -62,7 +63,7 @@ module.exports = class User {
     }
 
     console.log("user wasn't found");
-    return;
+    return user;
   }
 
   async updateChat(user) {
@@ -89,8 +90,8 @@ module.exports = class User {
       .find({ _id: { $in: chat.users } })
       .toArray();
 
-    const sortedArray = usersInfo.sort(this._sortArr);
-    return usersInfo;
+    // const sortedArray = usersInfo.sort(this._sortArr);
+    return sortedArray;
   }
 
   async printUsers(usersList) {
@@ -102,7 +103,7 @@ module.exports = class User {
       line =
         line +
         `\n ${user.username || user.first_name || user.last_name}: ${
-          user.rating
+          user.currentRating
         }`;
     });
 
@@ -112,17 +113,34 @@ module.exports = class User {
   async sortUsers() {
     await this.users.aggregate([
       { $group: { _id: "$username" } },
-      { $sort: { rating: -1 } },
+      { $sort: { currentRating: -1 } },
     ]);
   }
 
   _sortArr(a, b) {
-    if (a.rating > b.rating) {
+    if (a.currentRating > b.currentRating) {
       return -1;
-    } else if (a.rating < b.rating) {
+    } else if (a.currentRating < b.currentRating) {
       return 1;
     } else {
       return 0;
     }
+  }
+
+  async addViaSchema() {
+    await userSchema.create({
+      username: "aboba",
+      first_name: "bob",
+      second_name: "aa",
+      rating: {
+        currentRating: 50505050,
+        prevRating: 0,
+      },
+    });
+    console.log("user added");
+  }
+  async searchViaSchema() {
+    let users = await userSchema.where("username").equals("aboba");
+    console.log(users);
   }
 };
