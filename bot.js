@@ -32,14 +32,13 @@ const start = async () => {
       await functions.mySocialCredit(ctx);
     });
 
+    bot.command("aboba", async (ctx) => {
+      await functions.aboba(ctx);
+    });
+
     // members rating command
     bot.command("members_social_credit", async (ctx) => {
       await functions.membersSocialCredit(ctx);
-    });
-
-    // test command
-    bot.command("aboba", async (ctx) => {
-      await functions.aboba(ctx);
     });
 
     // reacting to a message

@@ -4,14 +4,9 @@ const checkData = require("./data_check");
 const gifts = require("./gifts");
 
 module.exports = class Functions {
-  constructor(chats, users) {
-    this.chats = chats;
-    this.users = users;
-  }
-
   async start(ctx) {
     const message = ctx.message;
-    const user = new User(this.chats, this.users, message);
+    const user = new User(message);
     const userData = await user.get();
 
     let response = "User already exists";
@@ -34,7 +29,7 @@ module.exports = class Functions {
   async mySocialCredit(ctx) {
     const message = ctx.message;
 
-    const user = new User(this.chats, this.users, message);
+    const user = new User(message);
     let userData = await user.get();
 
     if (!userData) {
@@ -44,7 +39,7 @@ module.exports = class Functions {
 
     ctx.telegram.sendMessage(
       message.chat.id,
-      `Your rating is ${userData.currentRating || 0}`,
+      `Your rating is ${userData.rating.currentRating}`,
       {
         reply_to_message_id: message.message_id,
       }
@@ -61,8 +56,8 @@ module.exports = class Functions {
       );
       return;
     }
-    const user = new User(this.chats, this.users, message);
-    await user.sortUsers();
+    const user = new User(message);
+    // await user.sortUsers();
     const usersList = await user.getUsers();
     const output = await user.printUsers(usersList);
 
@@ -82,7 +77,7 @@ module.exports = class Functions {
 
     if (!checkData.check(message)) return;
 
-    const user = new User(this.chats, this.users, message);
+    const user = new User(message);
 
     if (stickerId === "AgADCR4AAmyzMUo") {
       await user.update(20, "receiver"); // +20 social credit
@@ -103,8 +98,7 @@ module.exports = class Functions {
 
   async aboba(ctx) {
     const message = ctx.message;
-    const user = new User(this.chats, this.users, message);
-    // user.addViaSchema();
-    user.searchViaSchema();
+    const user = new User(message);
+    user.aboba();
   }
 };

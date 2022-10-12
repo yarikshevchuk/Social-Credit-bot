@@ -1,12 +1,14 @@
+const dotenv = require("dotenv").config({
+  path: `${__dirname}/.env`,
+});
 const mongoose = require("mongoose");
-mongoose.connect(
-  "mongodb+srv://shev:O8iN0WiRrFmaABqJ@cluster0.9rwd1.mongodb.net/?retryWrites=true&w=majority"
-);
+mongoose.connect(dotenv.parsed.MONGO);
 
 const userSchema = new mongoose.Schema({
-  username: String,
-  first_name: String,
-  second_name: String,
+  _id: Number,
+  username: { type: String, default: null },
+  first_name: { type: String, default: null },
+  second_name: { type: String, default: null },
   rating: {
     currentRating: {
       type: Number,
@@ -18,15 +20,15 @@ const userSchema = new mongoose.Schema({
     },
   },
   giftsCountdown: {
-    bowlOfRice: {
+    smallGift: {
       type: Number,
       default: 300,
     },
-    catWife: {
+    averageGift: {
       type: Number,
       default: 1000,
     },
-    respectFromXi: {
+    bigGift: {
       type: Number,
       default: 5000,
     },
