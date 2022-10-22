@@ -1,5 +1,5 @@
 const dotenv = require("dotenv").config({
-  path: `${__dirname}/.env`,
+  path: `${__dirname}/../.env`,
 });
 const mongoose = require("mongoose");
 mongoose.connect(dotenv.parsed.MONGO);

@@ -41,6 +41,14 @@ const start = async () => {
       await functions.membersSocialCredit(ctx);
     });
 
+    bot.command("language", async (ctx) => {
+      await functions.language(ctx);
+    });
+
+    bot.on("callback_query", async (ctx) => {
+      await functions.changeLanguage(ctx);
+    });
+
     // reacting to a message
     bot.on("text", async (ctx) => {
       await functions.textResponse(ctx);

@@ -1,6 +1,7 @@
 const DataProcessing = require("./data_processing");
-const userSchema = require("./schemas/user_schema");
-const chatSchema = require("./schemas/chat_schema");
+const UserSchema = require("./schemas/user_schema");
+const ChatSchema = require("./schemas/chat_schema");
+const Language = require("./languages/language");
 
 module.exports = class User {
   constructor(message) {
@@ -17,11 +18,11 @@ module.exports = class User {
         userData = this.dataProcessing.extractSenderData();
       }
 
-      let users = await userSchema.where("_id").equals(userData._id);
+      let users = await UserSchema.where("_id").equals(userData._id);
       let user = users[0];
       if (user) return;
 
-      await userSchema.create({
+      await UserSchema.create({
         _id: userData._id,
         username: userData.username,
         first_name: userData.first_name,
@@ -42,9 +43,18 @@ module.exports = class User {
     }
   }
 
-  async get() {
-    const userData = this.dataProcessing.extractSenderData(this.message);
-    let users = await userSchema.where("_id").equals(userData._id);
+  async get(target) {
+    let userData;
+
+    if (target === "receiver") {
+      userData = this.dataProcessing.extractReceiverData();
+    } else if (target === "sender") {
+      userData = this.dataProcessing.extractSenderData();
+    } else {
+      return;
+    }
+
+    let users = await UserSchema.where("_id").equals(userData._id);
     let user = users[0];
 
     if (!user) {
@@ -68,23 +78,14 @@ module.exports = class User {
         return;
       }
 
-      let users = await userSchema.where("_id").equals(userData._id);
+      let users = await UserSchema.where("_id").equals(userData._id);
       let user = users[0];
 
       if (!user) {
-        await this.add(0, userData);
+        await this.add(rating, userData);
         await this._updateChat(userData);
       }
 
-      if (user.giftsCountdown.smallGift <= 0) {
-        user.giftsCountdown.smallGift = 300;
-      }
-      if (user.giftsCountdown.smallGift <= 0) {
-        user.giftsCountdown.averageGift = 1000;
-      }
-      if (user.giftsCountdown.smallGift <= 0) {
-        user.giftsCountdown.bigGift = 5000;
-      }
       user.rating.prevRating = user.rating.currentRating;
       user.rating.currentRating += rating;
 
@@ -102,18 +103,17 @@ module.exports = class User {
 
   async _updateChat(user) {
     try {
-      const chats = await chatSchema.where("_id").equals(this.message.chat.id);
+      const chats = await ChatSchema.where("_id").equals(this.message.chat.id);
       const chat = chats[0];
 
       if (chat) {
         if (chat.users.includes(user._id)) return;
-        console.log(chat.users);
         chat.users.push(user._id);
         await chat.save();
       } else {
         if (this.message.chat.type === "private") return;
 
-        const chat = await chatSchema.create({
+        const chat = await ChatSchema.create({
           _id: this.message.chat.id,
         });
         chat.users.push(user._id);
@@ -124,9 +124,30 @@ module.exports = class User {
     }
   }
 
+  async changeLanguage(data) {
+    try {
+      const chats = await ChatSchema.where("_id").equals(this.message.chat.id);
+      const chat = chats[0];
+
+      if (chat) {
+        chat.language = data;
+        await chat.save();
+      } else {
+        if (this.message.chat.type === "private") return;
+
+        const chat = await ChatSchema.create({
+          _id: this.message.chat.id,
+        });
+        chat.language = data;
+        await chat.save();
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
   async getUsers() {
-    const chats = await chatSchema
-      .where("_id")
+    const chats = await ChatSchema.where("_id")
       .equals(this.message.chat.id)
       .populate("users");
 
@@ -136,23 +157,26 @@ module.exports = class User {
   }
 
   async printUsers(usersList) {
-    let line = "Members rating:";
+    const lang = new Language(this.message);
+    let language = await lang.select();
+
+    let response = `${language.printUsers.response}`;
 
     if (!usersList) return;
 
-    await usersList.forEach((user) => {
-      line =
-        line +
-        `\n ${user.username || user.first_name || user.last_name}: ${
-          user.rating.currentRating
-        }`;
+    await usersList.forEach((user, index) => {
+      response =
+        response +
+        `\n${index + 1}) ${
+          user.username || user.first_name || user.last_name
+        }: ${user.rating.currentRating}`;
     });
 
-    return line;
+    return response;
   }
 
   async sortUsers() {
-    await userSchema.aggregate([
+    await UserSchema.aggregate([
       { $group: { _id: "$username" } },
       { $limit: 50 },
       { $sort: { currentRating: -1 } },
@@ -168,5 +192,13 @@ module.exports = class User {
       return 0;
     }
   }
-  async aboba() {}
+  async aboba() {
+    try {
+      const lang = new Language(this.message);
+      let language = lang.select();
+      console.log(language);
+    } catch (error) {
+      console.log(error);
+    }
+  }
 };

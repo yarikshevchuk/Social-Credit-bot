@@ -1,0 +1,35 @@
+{
+  "start": {
+    "response": {
+      "userExists": "您被社会信用系统跟踪",
+      "userAdded": "社会信用系统将跟踪您"
+    }
+  },
+  "help": {
+    "response": {
+      "start": "要使用此机器人，您必须通过链接安装贴纸：",
+      "end": "然后只需使用适当的贴纸回复您想要更改其社交评级的人的消息"
+    }
+  },
+  "mySocialCredit": {
+    "response": "你的评分是"
+  },
+  "membersSocialCredit": {
+    "response": " 会员评价："
+  },
+  "printUsers": {
+    "response": "会员社会信用： "
+  },
+  "language": {
+    "response": "改变语言："
+  },
+  "changeLanguage": {
+    "response": "语言已更改"
+  },
+  "gifts": {
+    "response": "恭喜，你有一个"
+  },
+  "other": {
+    "commandForGroupChats": "此命令是为群聊创建的"
+  }
+}

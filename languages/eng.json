@@ -1,0 +1,32 @@
+{
+  "start": {
+    "response": {
+      "userExists": "You are tracked by the social credit system",
+      "userAdded": "Social credit system will be tracking you"
+    }
+  },
+  "help": {
+    "response": "To use this bot you have to install the stickers by the link: \n${stickersLink} \nThen just reply to the message of a person, whose social rating you want to change, using an appropriate sticker"
+  },
+  "mySocialCredit": {
+    "response": "Your rating is"
+  },
+  "membersSocialCredit": {
+    "response": " Members rating:"
+  },
+  "printUsers": {
+    "response": "Members social credit: "
+  },
+  "language": {
+    "response": "Change language:"
+  },
+  "changeLanguage": {
+    "response": "Language changed"
+  },
+  "gifts": {
+    "response": "Congratulations, you've got a"
+  },
+  "other": {
+    "commandForGroupChats": "This command has been created for group chats"
+  }
+}
