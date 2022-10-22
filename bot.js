@@ -1,20 +1,16 @@
 const { Telegraf } = require("telegraf");
-const { MongoClient } = require("mongodb");
 const Functions = require("./functions");
 const dotenv = require("dotenv").config({
   path: `${__dirname}/.env`,
 });
 
-const client = new MongoClient(dotenv.parsed.MONGO);
 const token = dotenv.parsed.TOKEN;
 const bot = new Telegraf(token); //сюда помещается токен, который дал botFather
 
 const start = async () => {
   try {
     await client.connect(); // Here we connect to the database and to the tables
-    const users = client.db().collection("users");
-    const chats = client.db().collection("chats");
-    const functions = new Functions(chats, users);
+    const functions = new Functions();
     console.log("Connection completed");
 
     // Bot start command
