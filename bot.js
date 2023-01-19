@@ -13,6 +13,7 @@ bot.catch((err) => {
 
 const start = async () => {
   try {
+    await client.connect(); // Here we connect to the database and to the tables
     const functions = new Functions();
     console.log("Connection completed");
 
