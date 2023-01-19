@@ -6,7 +6,10 @@
     }
   },
   "help": {
-    "response": "To use this bot you have to install the stickers by the link: \n${stickersLink} \nThen just reply to the message of a person, whose social rating you want to change, using an appropriate sticker"
+    "response": {
+      "start": "To use this bot you have to install the stickers by the link: ",
+      "end": "Then just reply to the message of a person, whose social rating you want to change, using an appropriate sticker"
+    }
   },
   "mySocialCredit": {
     "response": "Your rating is"
@@ -25,6 +28,17 @@
   },
   "gifts": {
     "response": "Congratulations, you've got a"
+  },
+  "login": {
+    "success": {
+      "response": "Enter this code on the site login page:"
+    },
+    "notTracked": {
+      "response": "You haven't been tracked by the party yet. Try entering “/start” command in the bot chat"
+    },
+    "wrongChat": {
+      "response": "Hey, if you share this code with anyone else, someone could steal all your Social Credit"
+    }
   },
   "other": {
     "commandForGroupChats": "This command has been created for group chats"

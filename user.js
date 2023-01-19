@@ -1,6 +1,6 @@
 const DataProcessing = require("./data_processing");
-const UserSchema = require("./schemas/user_schema");
-const ChatSchema = require("./schemas/chat_schema");
+const UserModel = require("./models/userModel");
+const ChatModel = require("./models/chatModel");
 const Language = require("./languages/language");
 
 module.exports = class User {
@@ -18,11 +18,11 @@ module.exports = class User {
         userData = this.dataProcessing.extractSenderData();
       }
 
-      let users = await UserSchema.where("_id").equals(userData._id);
+      let users = await UserModel.where("_id").equals(userData._id);
       let user = users[0];
       if (user) return;
 
-      await UserSchema.create({
+      await UserModel.create({
         _id: userData._id,
         username: userData.username,
         first_name: userData.first_name,
@@ -54,7 +54,7 @@ module.exports = class User {
       return;
     }
 
-    let users = await UserSchema.where("_id").equals(userData._id);
+    let users = await UserModel.where("_id").equals(userData._id);
     let user = users[0];
 
     if (!user) {
@@ -78,7 +78,7 @@ module.exports = class User {
         return;
       }
 
-      let users = await UserSchema.where("_id").equals(userData._id);
+      let users = await UserModel.where("_id").equals(userData._id);
       let user = users[0];
 
       if (!user) {
@@ -88,6 +88,17 @@ module.exports = class User {
 
       user.rating.prevRating = user.rating.currentRating;
       user.rating.currentRating += rating;
+
+      // якщо рейтинг користувача нижче нуля, тоді не можна змінювати відлік подарунку
+      // якщо рейтинг вище нуля, та його зменшують, не треба зменшувати відлік подарунку
+      if (
+        user.rating.currentRating < 0 ||
+        (user.rating.currentRating > 0 && rating < 0)
+      ) {
+        await user.save();
+        await this._updateChat(userData);
+        return;
+      }
 
       user.giftsCountdown.smallGift -= rating;
       user.giftsCountdown.averageGift -= rating;
@@ -103,7 +114,7 @@ module.exports = class User {
 
   async _updateChat(user) {
     try {
-      const chats = await ChatSchema.where("_id").equals(this.message.chat.id);
+      const chats = await ChatModel.where("_id").equals(this.message.chat.id);
       const chat = chats[0];
 
       if (chat) {
@@ -113,7 +124,7 @@ module.exports = class User {
       } else {
         if (this.message.chat.type === "private") return;
 
-        const chat = await ChatSchema.create({
+        const chat = await ChatModel.create({
           _id: this.message.chat.id,
         });
         chat.users.push(user._id);
@@ -126,7 +137,7 @@ module.exports = class User {
 
   async changeLanguage(data) {
     try {
-      const chats = await ChatSchema.where("_id").equals(this.message.chat.id);
+      const chats = await ChatModel.where("_id").equals(this.message.chat.id);
       const chat = chats[0];
 
       if (chat) {
@@ -135,7 +146,7 @@ module.exports = class User {
       } else {
         if (this.message.chat.type === "private") return;
 
-        const chat = await ChatSchema.create({
+        const chat = await ChatModel.create({
           _id: this.message.chat.id,
         });
         chat.language = data;
@@ -147,41 +158,49 @@ module.exports = class User {
   }
 
   async getUsers() {
-    const chats = await ChatSchema.where("_id")
-      .equals(this.message.chat.id)
-      .populate("users");
+    try {
+      const chats = await ChatModel.where("_id")
+        .equals(this.message.chat.id)
+        .populate("users");
 
-    const usersList = chats[0].users;
-    const sortedArray = usersList.sort(this._sortArr);
-    return sortedArray;
+      const usersList = chats[0].users;
+      const sortedArray = usersList.sort(this._sortArr);
+      return sortedArray;
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   async printUsers(usersList) {
-    const lang = new Language(this.message);
-    let language = await lang.select();
+    try {
+      const lang = new Language(this.message);
+      let language = await lang.select();
 
-    let response = `${language.printUsers.response}`;
+      let response = `${language.printUsers.response}`;
 
-    if (!usersList) return;
+      if (!usersList) return;
 
-    await usersList.forEach((user, index) => {
-      response =
-        response +
-        `\n${index + 1}) ${
-          user.username || user.first_name || user.last_name
-        }: ${user.rating.currentRating}`;
-    });
+      await usersList.forEach((user, index) => {
+        response =
+          response +
+          `\n${index + 1}) ${
+            user.username || user.first_name || user.last_name
+          }: ${user.rating.currentRating}`;
+      });
 
-    return response;
+      return response;
+    } catch (error) {
+      console.log(error);
+    }
   }
 
-  async sortUsers() {
-    await UserSchema.aggregate([
-      { $group: { _id: "$username" } },
-      { $limit: 50 },
-      { $sort: { currentRating: -1 } },
-    ]);
-  }
+  // async sortUsers() {
+  //   await UserSchema.aggregate([
+  //     { $group: { _id: "$username" } },
+  //     { $limit: 50 },
+  //     { $sort: { currentRating: -1 } },
+  //   ]);
+  // }
 
   _sortArr(a, b) {
     if (a.rating.currentRating > b.rating.currentRating) {
@@ -192,13 +211,13 @@ module.exports = class User {
       return 0;
     }
   }
-  async aboba() {
-    try {
-      const lang = new Language(this.message);
-      let language = lang.select();
-      console.log(language);
-    } catch (error) {
-      console.log(error);
-    }
-  }
+  // async aboba() {
+  //   try {
+  //     const lang = new Language(this.message);
+  //     let language = lang.select();
+  //     console.log(language);
+  //   } catch (error) {
+  //     console.log(error);
+  //   }
+  // }
 };

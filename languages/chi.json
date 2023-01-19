@@ -29,6 +29,17 @@
   "gifts": {
     "response": "恭喜，你有一个"
   },
+  "login": {
+    "success": {
+      "response": "在站点登录页面上输入此代码:"
+    },
+    "failure": {
+      "response": "你还没有被派对追踪到。 尝试在机器人聊天中输入“/start”命令"
+    },
+    "wrongChat": {
+      "response": "嘿，如果你与其他人分享此代码，有人可能会窃取你所有的社会信用"
+    }
+  },
   "other": {
     "commandForGroupChats": "此命令是为群聊创建的"
   }

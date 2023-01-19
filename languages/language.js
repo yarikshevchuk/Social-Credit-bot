@@ -1,7 +1,7 @@
 const eng = require("./eng.json");
 const ua = require("./ua.json");
 const chinese = require("./chi.json");
-const ChatSchema = require("../schemas/chat_schema");
+const ChatSchema = require("../models/chatModel");
 
 class Language {
   constructor(message) {

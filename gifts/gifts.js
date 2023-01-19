@@ -1,4 +1,5 @@
 const gifts = require("./gifts.json");
+const Language = require("../languages/language");
 
 class Gifts {
   constructor(ctx, message, user) {
@@ -11,7 +12,7 @@ class Gifts {
     if (!gift) return;
 
     const lang = new Language(this.message);
-    let language = lang.select();
+    let language = await lang.select();
 
     await this.ctx.telegram.sendMessage(
       this.message.chat.id,

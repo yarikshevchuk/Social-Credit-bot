@@ -1,20 +1,19 @@
 const { Telegraf } = require("telegraf");
-const { MongoClient } = require("mongodb");
 const Functions = require("./functions");
 const dotenv = require("dotenv").config({
   path: `${__dirname}/.env`,
 });
 
-const client = new MongoClient(dotenv.parsed.MONGO);
 const token = dotenv.parsed.TOKEN;
 const bot = new Telegraf(token); //сюда помещается токен, который дал botFather
 
+bot.catch((err) => {
+  console.log("Ooops", err);
+});
+
 const start = async () => {
   try {
-    await client.connect(); // Here we connect to the database and to the tables
-    const users = client.db().collection("users");
-    const chats = client.db().collection("chats");
-    const functions = new Functions(chats, users);
+    const functions = new Functions();
     console.log("Connection completed");
 
     // Bot start command
@@ -32,9 +31,10 @@ const start = async () => {
       await functions.mySocialCredit(ctx);
     });
 
-    bot.command("aboba", async (ctx) => {
-      await functions.aboba(ctx);
-    });
+    // command for testing
+    // bot.command("aboba", async (ctx) => {
+    //   await functions.aboba(ctx);
+    // });
 
     // members rating command
     bot.command("members_social_credit", async (ctx) => {
@@ -43,6 +43,10 @@ const start = async () => {
 
     bot.command("language", async (ctx) => {
       await functions.language(ctx);
+    });
+
+    bot.command("login", async (ctx) => {
+      await functions.login(ctx);
     });
 
     bot.on("callback_query", async (ctx) => {
