@@ -1,14 +1,10 @@
-const dotenv = require("dotenv").config({
-  path: `${__dirname}/../.env`,
-});
 const mongoose = require("mongoose");
-mongoose.connect(dotenv.parsed.MONGO);
 
 const userSchema = new mongoose.Schema({
   _id: Number,
   username: { type: String, default: null },
   first_name: { type: String, default: null },
-  role: { type: String, default: "partyWorker" },
+  roles: [{ type: String, ref: "roles" }],
   rating: {
     currentRating: {
       type: Number,
