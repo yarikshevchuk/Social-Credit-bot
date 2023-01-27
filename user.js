@@ -1,6 +1,7 @@
 const DataProcessing = require("./data_processing");
 const UserModel = require("./models/userModel");
 const ChatModel = require("./models/chatModel");
+const RoleModel = require("./models/roleModel");
 const Language = require("./languages/language");
 
 module.exports = class User {
@@ -22,11 +23,15 @@ module.exports = class User {
       let user = users[0];
       if (user) return;
 
+      const userRoles = await RoleModel.where("value").equals("PARTYWORKER");
+      const userRole = userRoles[0];
+
       await UserModel.create({
         _id: userData._id,
         username: userData.username,
         first_name: userData.first_name,
         last_name: userData.last_name,
+        roles: [userRole.value],
         rating: {
           currentRating: currentRating,
           prevRating: 0,
@@ -89,6 +94,10 @@ module.exports = class User {
       user.rating.prevRating = user.rating.currentRating;
       user.rating.currentRating += rating;
 
+      const userRoles = await RoleModel.where("value").equals("PARTYWORKER");
+      console.log(userRoles);
+      user.roles[0] = userRoles[0].value;
+
       // якщо рейтинг користувача нижче нуля, тоді не можна змінювати відлік подарунку
       // якщо рейтинг вище нуля, та його зменшують, не треба зменшувати відлік подарунку
       if (
@@ -103,6 +112,14 @@ module.exports = class User {
       user.giftsCountdown.smallGift -= rating;
       user.giftsCountdown.averageGift -= rating;
       user.giftsCountdown.bigGift -= rating;
+
+      // updating role
+
+      // const userRoles = await RoleModel.where("value").equals("PARTYWORKER");
+      // const userRole = userRoles[0];
+      // const userRole = await Role.findOne({ value: "USER" });
+      // console.log(userRole);
+      // user.roles[0] = userRole.value;
 
       await user.save();
       await this._updateChat(userData);
@@ -211,13 +228,31 @@ module.exports = class User {
       return 0;
     }
   }
-  // async aboba() {
-  //   try {
-  //     const lang = new Language(this.message);
-  //     let language = lang.select();
-  //     console.log(language);
-  //   } catch (error) {
-  //     console.log(error);
-  //   }
-  // }
+
+  async aboba(ctx) {
+    try {
+      const lang = new Language(this.message);
+      let language = lang.select();
+
+      if (!(this.message.from.id == 1027937405)) {
+        ctx.telegram.sendMessage(
+          this.message.chat.id,
+          `Ти не адмін, а чмо, закрий патякалку!`
+        );
+        return;
+      }
+
+      await UserModel.updateMany(
+        {},
+        { $set: { roles: ["PARTYWORKER"] } },
+        { upsert: false }
+      );
+
+      // awaitUserModel.save();
+
+      console.log("success");
+    } catch (error) {
+      console.log(error);
+    }
+  }
 };

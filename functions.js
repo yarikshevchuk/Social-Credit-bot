@@ -218,14 +218,14 @@ module.exports = class Functions {
 
       const user = new User(message);
 
-      if (hexEmoji == "1f44d") {
-        await user.update(-15, "receiver"); // +15 social credit, response on thumb up sticker
-      } else if (hexEmoji == "1f44e") {
-        await user.update(-15, "receiver"); // -15 social credit, response on thumb down sticker
-      } else if (stickerId === "AgADCR4AAmyzMUo") {
+      if (stickerId === "AgADCR4AAmyzMUo") {
         await user.update(20, "receiver"); // +20 social credit
       } else if (stickerId === "AgADwRwAArziMUo") {
         await user.update(-20, "receiver"); // -20 social credit
+      } else if (hexEmoji == "1f44d") {
+        await user.update(+15, "receiver"); // +15 social credit, response on thumb up sticker
+      } else if (hexEmoji == "1f44e") {
+        await user.update(-15, "receiver"); // -15 social credit, response on thumb down sticker
       } else if (stickerId === "AgAD4hcAAjgHOUo") {
         await user.update(15, "receiver"); // +15 social credit
       } else if (stickerId === "AgADzxYAAh5YOEo") {
@@ -248,13 +248,13 @@ module.exports = class Functions {
     }
   }
 
-  // async aboba(ctx) {
-  //   try {
-  //     const message = ctx.message;
-  //     const user = new User(message);
-  //     user.aboba();
-  //   } catch (error) {
-  //     console.log(error);
-  //   }
-  // }
+  async aboba(ctx) {
+    try {
+      const message = ctx.message;
+      const user = new User(message);
+      user.aboba(ctx);
+    } catch (error) {
+      console.log(error);
+    }
+  }
 };
