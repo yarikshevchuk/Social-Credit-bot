@@ -95,7 +95,6 @@ module.exports = class User {
       user.rating.currentRating += rating;
 
       const userRoles = await RoleModel.where("value").equals("PARTYWORKER");
-      console.log(userRoles);
       user.roles[0] = userRoles[0].value;
 
       // якщо рейтинг користувача нижче нуля, тоді не можна змінювати відлік подарунку
@@ -231,17 +230,6 @@ module.exports = class User {
 
   async aboba(ctx) {
     try {
-      const lang = new Language(this.message);
-      let language = lang.select();
-
-      if (!(this.message.from.id == 1027937405)) {
-        ctx.telegram.sendMessage(
-          this.message.chat.id,
-          `Ти не адмін, а чмо, закрий патякалку!`
-        );
-        return;
-      }
-
       await UserModel.updateMany(
         {},
         { $set: { roles: ["PARTYWORKER"] } },

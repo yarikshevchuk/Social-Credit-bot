@@ -40,7 +40,22 @@
       "response": "Hey, if you share this code with anyone else, someone could steal all your Social Credit"
     }
   },
+  "promocode": {
+    "ask": {
+      "response": "Enter promocode:"
+    },
+    "success": {
+      "response": {
+        "start": "Thanks to the great Xi, you received",
+        "end": "social credit points"
+      }
+    },
+    "wrongPromocode": {
+      "response": "This code is invalid, party will take away your points if you continue"
+    }
+  },
   "other": {
-    "commandForGroupChats": "This command has been created for group chats"
+    "commandForGroupChats": "This command has been created for group chats",
+    "accessDenied": "Only great Xi has access to this command"
   }
 }
