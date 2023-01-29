@@ -1,4 +1,4 @@
-const { Telegraf } = require("telegraf");
+const { Telegraf, Scenes, session } = require("telegraf");
 const Functions = require("./functions");
 const dotenv = require("dotenv").config();
 const mongoose = require("mongoose");
@@ -6,6 +6,11 @@ const mongoose = require("mongoose");
 const token = dotenv.parsed.TOKEN;
 const bot = new Telegraf(token); //сюда помещается токен, который дал botFather
 const functions = new Functions();
+const promocode = new Scenes.BaseScene("promocode");
+const stage = new Scenes.Stage([promocode]);
+
+bot.use(session());
+bot.use(stage.middleware());
 
 const connectDB = async () => {
   try {
@@ -41,14 +46,33 @@ bot.command("members_social_credit", async (ctx) => {
   await functions.membersSocialCredit(ctx);
 });
 
+// command sending language
 bot.command("language", async (ctx) => {
-  await functions.language(ctx);
+  await functions.chooseLanguage(ctx);
 });
 
+// login command
 bot.command("login", async (ctx) => {
   await functions.login(ctx);
 });
 
+// asking user to enter promocode: 1st part
+promocode.enter(async (ctx) => {
+  await functions.enterPromocode(ctx);
+});
+
+// handling entered data: 2nd part
+promocode.on("text", async (ctx) => {
+  // validate
+  await functions.handlePromocode(ctx);
+
+  return ctx.scene.leave();
+});
+
+// declaring the command to enter a promocode: 3rd part
+bot.command("enter_promocode", (ctx) => ctx.scene.enter("promocode"));
+
+// reacting to a user chosing one of the buttons
 bot.on("callback_query", async (ctx) => {
   await functions.changeLanguage(ctx);
 });

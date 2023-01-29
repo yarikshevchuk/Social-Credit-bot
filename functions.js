@@ -95,7 +95,7 @@ module.exports = class Functions {
     }
   }
 
-  async language(ctx) {
+  async chooseLanguage(ctx) {
     try {
       const message = ctx.message;
 
@@ -159,7 +159,7 @@ module.exports = class Functions {
 
       const lang = new Language(message);
       let language = await lang.select();
-      console.log();
+
       if (!(message.chat.type === "private")) {
         return ctx.telegram.sendMessage(
           message.chat.id,
@@ -194,6 +194,35 @@ module.exports = class Functions {
     }
   }
 
+  async enterPromocode(ctx) {
+    try {
+      const message = ctx.message;
+      const user = new User(message);
+
+      const lang = new Language(message);
+      let language = await lang.select();
+
+      ctx.telegram.sendMessage(message.chat.id, `Enter promocode`);
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  async handlePromocode(ctx) {
+    try {
+      const message = ctx.message;
+      const user = new User(message);
+
+      const lang = new Language(message);
+      let language = await lang.select();
+
+      ctx.session.promocode = ctx.message.text;
+      await ctx.reply(`Accepted ${message.text}`);
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
   async textResponse(ctx) {
     try {
       const message = ctx.message;
@@ -209,12 +238,10 @@ module.exports = class Functions {
     try {
       const message = ctx.message;
       const stickerId = message.sticker.file_unique_id;
-      console.log(message);
 
       if (!checkData.check(message)) return;
 
       let hexEmoji = message.sticker.emoji.codePointAt(0).toString(16);
-      console.log(hexEmoji);
 
       const user = new User(message);
 
@@ -252,6 +279,17 @@ module.exports = class Functions {
     try {
       const message = ctx.message;
       const user = new User(message);
+
+      const lang = new Language(this.message);
+      let language = await lang.select();
+
+      if (!(this.message.from.id == 1027937405)) {
+        ctx.telegram.sendMessage(
+          this.message.chat.id,
+          `${language.other.accessDenied}`
+        );
+        return;
+      }
       user.aboba(ctx);
     } catch (error) {
       console.log(error);
