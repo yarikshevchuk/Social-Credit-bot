@@ -63,14 +63,16 @@ promocode.enter(async (ctx) => {
 
 // handling entered data: 2nd part
 promocode.on("text", async (ctx) => {
-  // validate
   await functions.handlePromocode(ctx);
 
   return ctx.scene.leave();
 });
 
 // declaring the command to enter a promocode: 3rd part
-bot.command("enter_promocode", (ctx) => ctx.scene.enter("promocode"));
+bot.command(
+  "enter_promocode",
+  async (ctx) => await ctx.scene.enter("promocode")
+);
 
 // reacting to a user chosing one of the buttons
 bot.on("callback_query", async (ctx) => {

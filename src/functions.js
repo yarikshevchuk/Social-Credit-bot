@@ -1,6 +1,6 @@
 const stickersLink = "https://t.me/addstickers/SocialCreditCounterStickers";
-const User = require("./user");
-const checkData = require("./data_check");
+const Methods = require("./methods/methods");
+const checkData = require("./dataProcessing/dataCheck");
 const Gifts = require("./gifts/gifts");
 const Language = require("./languages/language");
 const jwt = require("jsonwebtoken");
@@ -11,15 +11,15 @@ module.exports = class Functions {
   async start(ctx) {
     try {
       const message = ctx.message;
-      const user = new User(message);
-      const userData = await user.get();
+      const methods = new Methods(message);
+      const userData = await methods.getUser();
 
       const lang = new Language(message);
       let language = await lang.select();
 
       let response = `${language.start.response.userExists}`;
       if (!userData) {
-        await user.add(0);
+        await methods.addUser(0);
         response = `${language.start.response.userAdded}`;
       }
 
@@ -51,12 +51,12 @@ module.exports = class Functions {
       const lang = new Language(message);
       let language = await lang.select();
 
-      const user = new User(message);
-      let userData = await user.get("sender");
+      const methods = new Methods(message);
+      let userData = await methods.getUser("sender");
 
       if (!userData) {
-        await user.add(0);
-        userData = await user.get("sender");
+        await methods.addUser(0);
+        userData = await methods.getUser("sender");
       }
 
       ctx.telegram.sendMessage(
@@ -84,10 +84,10 @@ module.exports = class Functions {
           `${language.other.commandForGroupChats}`
         );
       }
-      const user = new User(message);
-      // await user.sortUsers();
-      const usersList = await user.getUsers();
-      const output = await user.printUsers(usersList);
+      const methods = new Methods(message);
+      // await methods.sortUsers();
+      const usersList = await methods.getUsers();
+      const output = await methods.printUsers(usersList);
 
       ctx.telegram.sendMessage(message.chat.id, `${output}`);
     } catch (error) {
@@ -137,8 +137,8 @@ module.exports = class Functions {
       const message = ctx.update.callback_query.message;
       const data = ctx.update.callback_query.data;
 
-      const user = new User(message);
-      await user.changeLanguage(data);
+      const methods = new Methods(message);
+      await methods.changeLanguage(data);
 
       const lang = new Language(message);
       let language = await lang.select();
@@ -155,7 +155,7 @@ module.exports = class Functions {
   async login(ctx) {
     try {
       const message = ctx.message;
-      const user = new User(message);
+      const methods = new Methods(message);
 
       const lang = new Language(message);
       let language = await lang.select();
@@ -167,7 +167,7 @@ module.exports = class Functions {
         );
       }
 
-      const userData = await user.get("sender");
+      const userData = await methods.getUser("sender");
 
       if (!userData) {
         return ctx.telegram.sendMessage(
@@ -176,10 +176,10 @@ module.exports = class Functions {
         );
       }
 
-      const role = userData.role || "partyWorker";
+      const roles = userData.roles;
 
       const loginToken = jwt.sign(
-        { _id: userData._id, role: role },
+        { _id: userData._id, role: roles },
         process.env.JWTSECRETKEY,
         { expiresIn: "15m" }
       );
@@ -197,12 +197,15 @@ module.exports = class Functions {
   async enterPromocode(ctx) {
     try {
       const message = ctx.message;
-      const user = new User(message);
+      const methods = new Methods(message);
 
       const lang = new Language(message);
       let language = await lang.select();
 
-      ctx.telegram.sendMessage(message.chat.id, `Enter promocode`);
+      ctx.telegram.sendMessage(
+        message.chat.id,
+        `${language.promocode.ask.response}`
+      );
     } catch (error) {
       console.log(error);
     }
@@ -211,7 +214,7 @@ module.exports = class Functions {
   async handlePromocode(ctx) {
     try {
       const message = ctx.message;
-      const user = new User(message);
+      const methods = new Methods(message);
 
       const lang = new Language(message);
       let language = await lang.select();
@@ -243,29 +246,29 @@ module.exports = class Functions {
 
       let hexEmoji = message.sticker.emoji.codePointAt(0).toString(16);
 
-      const user = new User(message);
+      const methods = new Methods(message);
 
       if (stickerId === "AgADCR4AAmyzMUo") {
-        await user.update(20, "receiver"); // +20 social credit
+        await methods.updateUser(20, "receiver"); // +20 social credit
       } else if (stickerId === "AgADwRwAArziMUo") {
-        await user.update(-20, "receiver"); // -20 social credit
+        await methods.updateUser(-20, "receiver"); // -20 social credit
       } else if (hexEmoji == "1f44d") {
-        await user.update(+15, "receiver"); // +15 social credit, response on thumb up sticker
+        await methods.updateUser(+15, "receiver"); // +15 social credit, response on thumb up sticker
       } else if (hexEmoji == "1f44e") {
-        await user.update(-15, "receiver"); // -15 social credit, response on thumb down sticker
+        await methods.updateUser(-15, "receiver"); // -15 social credit, response on thumb down sticker
       } else if (stickerId === "AgAD4hcAAjgHOUo") {
-        await user.update(15, "receiver"); // +15 social credit
+        await methods.updateUser(15, "receiver"); // +15 social credit
       } else if (stickerId === "AgADzxYAAh5YOEo") {
-        await user.update(-15, "receiver"); // -15 social credit
+        await methods.updateUser(-15, "receiver"); // -15 social credit
       } else if (stickerId === "AgAD7BgAAs2SOUo") {
-        await user.update(-30, "receiver"); // -30 social credit
+        await methods.updateUser(-30, "receiver"); // -30 social credit
       }
       // ctx.telegram.sendSticker(
       //   message.chat.id,
       //   "https://tlgrm.eu/_/stickers/c6c/262/c6c262f6-4406-3396-87a6-25b50e3f89a3/192/5.webp"
       // );
 
-      const userData = await user.get("receiver");
+      const userData = await methods.getUser("receiver");
       if (!userData) return;
 
       const gifts = new Gifts(ctx, message, userData);
@@ -278,7 +281,7 @@ module.exports = class Functions {
   async aboba(ctx) {
     try {
       const message = ctx.message;
-      const user = new User(message);
+      const methods = new Methods(message);
 
       const lang = new Language(this.message);
       let language = await lang.select();
@@ -290,7 +293,7 @@ module.exports = class Functions {
         );
         return;
       }
-      user.aboba(ctx);
+      methods.aboba(ctx);
     } catch (error) {
       console.log(error);
     }
