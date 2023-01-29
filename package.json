@@ -4,8 +4,8 @@
   "description": "social credit bot software ",
   "main": "bot.js",
   "scripts": {
-    "dev": "nodemon bot.js",
-    "start": "node bot.js"
+    "dev": "nodemon src/bot.js",
+    "start": "node src/bot.js"
   },
   "keywords": [
     "bot",

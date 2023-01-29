@@ -1,8 +1,8 @@
-const DataProcessing = require("./data_processing");
-const UserModel = require("./models/userModel");
-const ChatModel = require("./models/chatModel");
-const RoleModel = require("./models/roleModel");
-const Language = require("./languages/language");
+const DataProcessing = require("../dataProcessing/dataSampling");
+const UserModel = require("../../models/userModel");
+const ChatModel = require("../../models/chatModel");
+const RoleModel = require("../../models/roleModel");
+const Language = require("../../languages/language");
 
 module.exports = class User {
   constructor(message) {
@@ -10,7 +10,7 @@ module.exports = class User {
     this.dataProcessing = new DataProcessing(message);
   }
 
-  async add(currentRating, data = null) {
+  async addUser(currentRating, data = null) {
     try {
       let userData;
       if (data) {
@@ -48,7 +48,7 @@ module.exports = class User {
     }
   }
 
-  async get(target) {
+  async getUser(target) {
     let userData;
 
     if (target === "receiver") {
@@ -63,7 +63,7 @@ module.exports = class User {
     let user = users[0];
 
     if (!user) {
-      console.log("user wasn't found");
+      return console.log("user wasn't found");
     }
 
     console.log(user);
@@ -71,7 +71,7 @@ module.exports = class User {
     return user;
   }
 
-  async update(rating, target) {
+  async updateUser(rating, target) {
     try {
       let userData;
 
