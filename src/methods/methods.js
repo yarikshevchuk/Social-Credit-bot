@@ -1,13 +1,12 @@
 const DataProcessing = require("../dataProcessing/dataSampling");
-const UserModel = require("../../models/userModel");
-const ChatModel = require("../../models/chatModel");
-const RoleModel = require("../../models/roleModel");
-const Language = require("../../languages/language");
+const UserModel = require("../models/userModel");
+const ChatModel = require("../models/chatModel");
+const RoleModel = require("../models/roleModel");
+const Language = require("../languages/language");
 
-module.exports = class User {
+module.exports = class UserMethods {
   constructor(message) {
     this.message = message;
-    this.dataProcessing = new DataProcessing(message);
   }
 
   async addUser(currentRating, data = null) {
@@ -16,7 +15,7 @@ module.exports = class User {
       if (data) {
         userData = data;
       } else {
-        userData = this.dataProcessing.extractSenderData();
+        userData = DataProcessing.extractSenderData(this.message);
       }
 
       let users = await UserModel.where("_id").equals(userData._id);
@@ -30,7 +29,6 @@ module.exports = class User {
         _id: userData._id,
         username: userData.username,
         first_name: userData.first_name,
-        last_name: userData.last_name,
         roles: [userRole.value],
         rating: {
           currentRating: currentRating,
@@ -41,6 +39,9 @@ module.exports = class User {
           catWife: 1000,
           respectFromXi: 5000,
         },
+        usedPromocodes: [],
+        bannedUntil: 0,
+        ratingChangeLimit: 5000,
       });
       console.log("user added");
     } catch (error) {
@@ -52,9 +53,9 @@ module.exports = class User {
     let userData;
 
     if (target === "receiver") {
-      userData = this.dataProcessing.extractReceiverData();
+      userData = DataProcessing.extractReceiverData(this.message);
     } else if (target === "sender") {
-      userData = this.dataProcessing.extractSenderData();
+      userData = DataProcessing.extractSenderData(this.message);
     } else {
       return;
     }
@@ -66,86 +67,99 @@ module.exports = class User {
       return console.log("user wasn't found");
     }
 
-    console.log(user);
+    // console.log(user);
 
     return user;
   }
 
-  async updateUser(rating, target) {
+  async updateSomebodysRating(message, rating) {
     try {
-      let userData;
+      // extracting data from message
+      let senderData = DataProcessing.extractSenderData(message);
+      let receiverData = DataProcessing.extractReceiverData(message);
 
-      if (target === "receiver") {
-        userData = this.dataProcessing.extractReceiverData();
-      } else if (target === "sender") {
-        userData = this.dataProcessing.extractSenderData();
-      } else {
-        return;
+      const today = new Date().setHours(0, 0, 0, 0);
+      const tomorrow = today + 24 * 60 * 60 * 1000;
+
+      // Looking for sender, if user dosn't exist, we add sender data to db
+      let sender = await UserModel.findOne({ _id: senderData._id });
+      if (!sender) {
+        await this.addUser(0, senderData);
+        await this.updateChat("sender");
+        sender = await UserModel.findOne({ _id: senderData._id });
       }
 
-      let users = await UserModel.where("_id").equals(userData._id);
-      let user = users[0];
+      // update sender's today limit if the time has passed
+      if (sender.ratingChangeLimit.updateAfter < Date.now()) {
+        sender.ratingChangeLimit.todayLimit = sender.ratingChangeLimit.limit;
+        sender.ratingChangeLimit.updateAfter = tomorrow;
+      }
+      //  checking if user's daily limit to change rating hasn't expired
+      if (sender.ratingChangeLimit.todayLimit <= 0) {
+        console.log("Daily limit expired");
+        sender.ratingChangeLimit.updateAfter = tomorrow;
+        return await sender.save();
+      }
+      sender.ratingChangeLimit.todayLimit -= Math.abs(rating); // decreasing today limit
 
-      if (!user) {
-        await this.add(rating, userData);
-        await this._updateChat(userData);
+      // looking for receiver, if user doesn't exist, we add receiver data to db
+      let receiver = await UserModel.findOne({ _id: receiverData._id });
+      if (!receiver) {
+        await this.addUser(rating, receiverData);
+        await this.updateChat("receiver");
+        receiver = await UserModel.findOne({ _id: receiverData._id });
       }
 
-      user.rating.prevRating = user.rating.currentRating;
-      user.rating.currentRating += rating;
-
-      const userRoles = await RoleModel.where("value").equals("PARTYWORKER");
-      user.roles[0] = userRoles[0].value;
+      receiver.rating.prevRating = receiver.rating.currentRating;
+      receiver.rating.currentRating += rating;
 
       // якщо рейтинг користувача нижче нуля, тоді не можна змінювати відлік подарунку
-      // якщо рейтинг вище нуля, та його зменшують, не треба зменшувати відлік подарунку
-      if (
-        user.rating.currentRating < 0 ||
-        (user.rating.currentRating > 0 && rating < 0)
-      ) {
-        await user.save();
-        await this._updateChat(userData);
-        return;
+      if (receiver.rating.currentRating < 0) {
+        await receiver.save();
+        return await this.updateChat("receiver");
       }
 
-      user.giftsCountdown.smallGift -= rating;
-      user.giftsCountdown.averageGift -= rating;
-      user.giftsCountdown.bigGift -= rating;
+      receiver.giftsCountdown.smallGift -= rating;
+      receiver.giftsCountdown.averageGift -= rating;
+      receiver.giftsCountdown.bigGift -= rating;
 
-      // updating role
-
-      // const userRoles = await RoleModel.where("value").equals("PARTYWORKER");
-      // const userRole = userRoles[0];
-      // const userRole = await Role.findOne({ value: "USER" });
-      // console.log(userRole);
-      // user.roles[0] = userRole.value;
-
-      await user.save();
-      await this._updateChat(userData);
+      await receiver.save();
+      await this.updateChat("receiver");
+      await sender.save();
       console.log("data updated");
     } catch (error) {
       console.log(error);
     }
   }
 
-  async _updateChat(user) {
+  async updateChat(target) {
     try {
+      let userData;
+
+      if (target === "receiver") {
+        userData = DataProcessing.extractReceiverData(this.message);
+      } else if (target === "sender") {
+        userData = DataProcessing.extractSenderData(this.message);
+      } else {
+        return;
+      }
+
       const chats = await ChatModel.where("_id").equals(this.message.chat.id);
       const chat = chats[0];
 
       if (chat) {
-        if (chat.users.includes(user._id)) return;
-        chat.users.push(user._id);
-        await chat.save();
-      } else {
-        if (this.message.chat.type === "private") return;
-
-        const chat = await ChatModel.create({
-          _id: this.message.chat.id,
-        });
-        chat.users.push(user._id);
-        await chat.save();
+        if (chat.users.includes(userData._id)) return;
+        chat.users.push(userData._id);
+        return await chat.save();
       }
+
+      if (this.message.chat.type === "private") return;
+
+      const createdChat = await ChatModel.create({
+        _id: this.message.chat.id,
+      });
+      createdChat.users.push(userData._id);
+      await createdChat.save();
     } catch (error) {
       console.log(error);
     }
@@ -230,15 +244,23 @@ module.exports = class User {
 
   async aboba(ctx) {
     try {
-      await UserModel.updateMany(
-        {},
-        { $set: { roles: ["PARTYWORKER"] } },
-        { upsert: false }
-      );
+      const today = new Date().setHours(0, 0, 0, 0);
+      const tomorrow = today + 24 * 60 * 60 * 1000;
 
-      // awaitUserModel.save();
+      // await UserModel.updateMany(
+      //   { ratingChangeLimit: { $exists: true } },
+      //   {
+      //     $set: {
+      //       ratingChangeLimit: {
+      //         limit: 5000,
+      //         todayLimit: 5000,
+      //         updateAfter: tomorrow,
+      //       },
+      //     },
+      //   }
+      // );
 
-      console.log("success");
+      ctx.reply("nice");
     } catch (error) {
       console.log(error);
     }

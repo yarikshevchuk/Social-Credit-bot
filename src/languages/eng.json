@@ -47,15 +47,28 @@
     "success": {
       "response": {
         "start": "Thanks to the great Xi, you received",
-        "end": "social credit points"
+        "end": "Social Credit points"
       }
     },
     "wrongPromocode": {
       "response": "This code is invalid, party will take away your points if you continue"
+    },
+    "promocodeExpired": {
+      "response": {
+        "start": "You had a chance to earn",
+        "end": "Social Credit points but the code has expired."
+      }
     }
   },
-  "other": {
-    "commandForGroupChats": "This command has been created for group chats",
-    "accessDenied": "Only great Xi has access to this command"
+  "error": {
+    "commandForGroupChats": {
+      "response": "This command has been created for group chats"
+    },
+    "accessDenied": {
+      "response": "Only great Xi has access to this command"
+    },
+    "userDoesntExist": {
+      "response": "You aren't tracked by the Social Credit system yet"
+    }
   }
 }

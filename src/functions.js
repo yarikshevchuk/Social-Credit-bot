@@ -1,10 +1,12 @@
 const stickersLink = "https://t.me/addstickers/SocialCreditCounterStickers";
 const Methods = require("./methods/methods");
-const checkData = require("./dataProcessing/dataCheck");
+const PromocodeMethods = require("./methods/promocodeMethods");
+const DataCheck = require("./dataProcessing/dataCheck");
 const Gifts = require("./gifts/gifts");
 const Language = require("./languages/language");
 const jwt = require("jsonwebtoken");
 const dotenv = require("dotenv");
+const promocodeModel = require("./models/promocodeModel");
 dotenv.config();
 
 module.exports = class Functions {
@@ -12,14 +14,18 @@ module.exports = class Functions {
     try {
       const message = ctx.message;
       const methods = new Methods(message);
+
       const userData = await methods.getUser();
 
       const lang = new Language(message);
       let language = await lang.select();
 
       let response = `${language.start.response.userExists}`;
+
       if (!userData) {
         await methods.addUser(0);
+
+        await methods.updateChat("sender");
         response = `${language.start.response.userAdded}`;
       }
 
@@ -81,7 +87,7 @@ module.exports = class Functions {
       if (message.chat.type === "private") {
         return ctx.telegram.sendMessage(
           message.chat.id,
-          `${language.other.commandForGroupChats}`
+          `${language.error.response.commandForGroupChats}`
         );
       }
       const methods = new Methods(message);
@@ -105,7 +111,7 @@ module.exports = class Functions {
       if (message.chat.type === "private") {
         ctx.telegram.sendMessage(
           message.chat.id,
-          `${language.other.commandForGroupChats}`
+          `${language.error.response.commandForGroupChats}`
         );
         return;
       }
@@ -122,7 +128,7 @@ module.exports = class Functions {
         }),
       };
 
-      ctx.telegram.sendMessage(
+      return ctx.telegram.sendMessage(
         message.chat.id,
         `${language.language.response}`,
         languageOptions
@@ -143,8 +149,15 @@ module.exports = class Functions {
       const lang = new Language(message);
       let language = await lang.select();
 
-      ctx.telegram.sendMessage(
+      await ctx.telegram.editMessageReplyMarkup(
         message.chat.id,
+        message.message_id
+      );
+
+      await ctx.telegram.editMessageText(
+        message.chat.id,
+        message.message_id,
+        undefined,
         `${language.changeLanguage.response}`
       );
     } catch (error) {
@@ -179,12 +192,12 @@ module.exports = class Functions {
       const roles = userData.roles;
 
       const loginToken = jwt.sign(
-        { _id: userData._id, role: roles },
+        { _id: userData._id, roles: roles },
         process.env.JWTSECRETKEY,
         { expiresIn: "15m" }
       );
 
-      ctx.telegram.sendMessage(
+      await ctx.telegram.sendMessage(
         message.chat.id,
         `${language.login.success.response}`
       );
@@ -220,7 +233,41 @@ module.exports = class Functions {
       let language = await lang.select();
 
       ctx.session.promocode = ctx.message.text;
-      await ctx.reply(`Accepted ${message.text}`);
+      const promocodeId = ctx.message.text;
+
+      if (!(ctx.message.text.length == 12)) {
+        return ctx.reply(`${language.promocode.wrongPromocode.response}`);
+      }
+
+      const promocode = await promocodeModel.findOne({
+        promocode: promocodeId,
+      });
+      const user = await methods.getUser("sender");
+      const time = Date.now();
+
+      if (!user) return ctx.reply("User doesn't exists");
+      if (!promocode) return ctx.reply("Promocode dosn't exists");
+      if (user.usedPromocodes.includes(promocodeId)) {
+        return ctx.reply("Promocode has been already used");
+      }
+      if (promocode.count <= 0) return ctx.reply("No such promocodes left");
+      if (time > promocode.exp) {
+        return ctx.reply(
+          `${language.promocode.promocodeExpired.response.start} ${promocode.value} ${language.promocode.promocodeExpired.response.end}`
+        );
+      }
+
+      await PromocodeMethods.updateRating(message, promocode.value);
+
+      // fair changes(I forgot how to say it properly)
+      promocode.count -= 1;
+      user.usedPromocodes.push(promocodeId);
+
+      user.save();
+      promocode.save();
+      return ctx.reply(
+        `${language.promocode.success.response.start} ${promocode.value} ${language.promocode.success.response.end}`
+      );
     } catch (error) {
       console.log(error);
     }
@@ -231,7 +278,7 @@ module.exports = class Functions {
       const message = ctx.message;
       // ctx.telegram.sendPhoto(message.chat.id, gifts.bowlOfRice);
       // ctx.telegram.sendMessage(message.chat.id, message.text);
-      console.log(message);
+      // console.log(message);
     } catch (error) {
       console.log(error);
     }
@@ -242,26 +289,26 @@ module.exports = class Functions {
       const message = ctx.message;
       const stickerId = message.sticker.file_unique_id;
 
-      if (!checkData.check(message)) return;
+      if (!DataCheck.validateRatingUpdate(message)) return;
 
       let hexEmoji = message.sticker.emoji.codePointAt(0).toString(16);
 
       const methods = new Methods(message);
 
       if (stickerId === "AgADCR4AAmyzMUo") {
-        await methods.updateUser(20, "receiver"); // +20 social credit
+        await methods.updateSomebodysRating(message, 20); // +20 social credit
       } else if (stickerId === "AgADwRwAArziMUo") {
-        await methods.updateUser(-20, "receiver"); // -20 social credit
+        await methods.updateSomebodysRating(message, -20); // -20 social credit
       } else if (hexEmoji == "1f44d") {
-        await methods.updateUser(+15, "receiver"); // +15 social credit, response on thumb up sticker
+        await methods.updateSomebodysRating(message, +15); // +15 social credit, response on thumb up sticker
       } else if (hexEmoji == "1f44e") {
-        await methods.updateUser(-15, "receiver"); // -15 social credit, response on thumb down sticker
+        await methods.updateSomebodysRating(message, -15); // -15 social credit, response on thumb down sticker
       } else if (stickerId === "AgAD4hcAAjgHOUo") {
-        await methods.updateUser(15, "receiver"); // +15 social credit
+        await methods.updateSomebodysRating(message, 15); // +15 social credit
       } else if (stickerId === "AgADzxYAAh5YOEo") {
-        await methods.updateUser(-15, "receiver"); // -15 social credit
+        await methods.updateSomebodysRating(message, -15); // -15 social credit
       } else if (stickerId === "AgAD7BgAAs2SOUo") {
-        await methods.updateUser(-30, "receiver"); // -30 social credit
+        await methods.updateSomebodysRating(message, -30); // -30 social credit
       }
       // ctx.telegram.sendSticker(
       //   message.chat.id,
@@ -283,13 +330,13 @@ module.exports = class Functions {
       const message = ctx.message;
       const methods = new Methods(message);
 
-      const lang = new Language(this.message);
+      const lang = new Language(message);
       let language = await lang.select();
 
-      if (!(this.message.from.id == 1027937405)) {
+      if (!(message.from.id == 1027937405)) {
         ctx.telegram.sendMessage(
-          this.message.chat.id,
-          `${language.other.accessDenied}`
+          message.chat.id,
+          `${language.error.response.accessDenied}`
         );
         return;
       }
