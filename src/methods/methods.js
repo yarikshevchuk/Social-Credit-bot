@@ -3,6 +3,7 @@ const UserModel = require("../models/userModel");
 const ChatModel = require("../models/chatModel");
 const RoleModel = require("../models/roleModel");
 const Language = require("../languages/language");
+const { betterConsoleLog } = require("telegram/Helpers");
 
 module.exports = class UserMethods {
   constructor(message) {
@@ -88,6 +89,10 @@ module.exports = class UserMethods {
         await this.updateChat("sender");
         sender = await UserModel.findOne({ _id: senderData._id });
       }
+      if (await this._isBanned(sender)) {
+        console.log(`${sender.username || sender.first_name} is banned`);
+        return;
+      }
 
       // update sender's today limit if the time has passed
       if (sender.ratingChangeLimit.updateAfter < Date.now()) {
@@ -109,15 +114,19 @@ module.exports = class UserMethods {
         await this.updateChat("receiver");
         receiver = await UserModel.findOne({ _id: receiverData._id });
       }
+      if (await this._isBanned(receiver)) {
+        console.log(`${receiver.username || receiver.first_name} is banned`);
+        return;
+      }
 
       receiver.rating.prevRating = receiver.rating.currentRating;
       receiver.rating.currentRating += rating;
 
       // якщо рейтинг користувача нижче нуля, тоді не можна змінювати відлік подарунку
-      if (receiver.rating.currentRating < 0) {
-        await receiver.save();
-        return await this.updateChat("receiver");
-      }
+      // if (receiver.rating.currentRating < 0) {
+      //   await receiver.save();
+      //   return await this.updateChat("receiver");
+      // }
 
       receiver.giftsCountdown.smallGift -= rating;
       receiver.giftsCountdown.averageGift -= rating;
@@ -240,6 +249,16 @@ module.exports = class UserMethods {
     } else {
       return 0;
     }
+  }
+
+  async _isBanned(user) {
+    console.log(user.bannedUntil, Date.now());
+
+    if (!(user.bannedUntil > Date.now())) return false;
+
+    if (user.rating) user.rating.currentRating = 0;
+    await user.save();
+    return true;
   }
 
   async aboba(ctx) {
