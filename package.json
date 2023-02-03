@@ -15,6 +15,7 @@
   "author": "shevchuk26y@gmail.com",
   "license": "ISC",
   "dependencies": {
+    "@mongoosejs/double": "^0.3.0",
     "dotenv": "^16.0.1",
     "input": "^1.0.1",
     "jsonwebtoken": "^9.0.0",
