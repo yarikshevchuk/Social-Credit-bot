@@ -52,10 +52,23 @@
     },
     "wrongPromocode": {
       "response": "此代码无效，如果您继续，派对将取消您的积分"
+    },
+    "promocodeExpired": {
+      "response": {
+        "start": "你有机会赚取",
+        "end": "社会信用积分，但代码已过期。"
+      }
     }
   },
-  "other": {
-    "commandForGroupChats": "此命令是为群聊创建的",
-    "accessDenied": "只有伟大的习才能使用这个命令"
+  "error": {
+    "commandForGroupChats": {
+      "response": "此命令是为群聊创建的"
+    },
+    "accessDenied": {
+      "response": "只有伟大的习才能使用这个命令"
+    },
+    "userDoesntExist": {
+      "response": "您尚未被社会信用系统跟踪"
+    }
   }
 }
