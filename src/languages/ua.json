@@ -52,10 +52,23 @@
     },
     "wrongPromocode": {
       "response": "Такого промокоду не існує"
+    },
+    "promocodeExpired": {
+      "response": {
+        "start": "У вас був шанс заробити",
+        "end": "Балів Соціального рейтингу, але термін дії минув."
+      }
     }
   },
-  "other": {
-    "commandForGroupChats": "Ця команда працює лише в групових чатах",
-    "accessDenied": "Тільки великий Ксі має доступ до цієї команди"
+  "error": {
+    "commandForGroupChats": {
+      "response": "Ця команда працює лише в групових чатах"
+    },
+    "accessDenied": {
+      "response": "Тільки великий Ксі має доступ до цієї команди"
+    },
+    "userDoesntExist": {
+      "response": "Система поки що не слідкує за вами"
+    }
   }
 }

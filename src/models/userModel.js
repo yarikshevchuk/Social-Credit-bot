@@ -1,5 +1,8 @@
 const mongoose = require("mongoose");
 
+const today = new Date().setHours(0, 0, 0, 0);
+const tomorrow = today + 24 * 60 * 60 * 1000;
+
 const userSchema = new mongoose.Schema({
   _id: Number,
   username: { type: String, default: null },
@@ -28,6 +31,13 @@ const userSchema = new mongoose.Schema({
       type: Number,
       default: 5000,
     },
+  },
+  usedPromocodes: [{ type: String, ref: "promocodes" }],
+  bannedUntil: { type: Number, default: 0 },
+  ratingChangeLimit: {
+    limit: { type: Number, default: 5000 },
+    todayLimit: { type: Number, default: 5000 },
+    updateAfter: { type: Number, default: tomorrow },
   },
 });
 

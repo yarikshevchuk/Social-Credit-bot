@@ -4,7 +4,7 @@ const dotenv = require("dotenv").config();
 const mongoose = require("mongoose");
 
 const token = dotenv.parsed.TOKEN;
-const bot = new Telegraf(token); //сюда помещается токен, который дал botFather
+const bot = new Telegraf(token); // there we place a token from bot father
 const functions = new Functions();
 const promocode = new Scenes.BaseScene("promocode");
 const stage = new Scenes.Stage([promocode]);
@@ -15,6 +15,7 @@ bot.use(stage.middleware());
 const connectDB = async () => {
   try {
     await mongoose.connect(process.env.MONGO); // connecting to the database
+    console.log("db connected");
     console.log("Connection completed");
   } catch (error) {
     console.log("Failed to connect to MongoDB", error);
@@ -51,6 +52,11 @@ bot.command("language", async (ctx) => {
   await functions.chooseLanguage(ctx);
 });
 
+// reacting to a user chosing one of the buttons
+bot.on("callback_query", async (ctx) => {
+  await functions.changeLanguage(ctx);
+});
+
 // login command
 bot.command("login", async (ctx) => {
   await functions.login(ctx);
@@ -64,7 +70,6 @@ promocode.enter(async (ctx) => {
 // handling entered data: 2nd part
 promocode.on("text", async (ctx) => {
   await functions.handlePromocode(ctx);
-
   return ctx.scene.leave();
 });
 
@@ -73,11 +78,6 @@ bot.command(
   "enter_promocode",
   async (ctx) => await ctx.scene.enter("promocode")
 );
-
-// reacting to a user chosing one of the buttons
-bot.on("callback_query", async (ctx) => {
-  await functions.changeLanguage(ctx);
-});
 
 // reacting to a message
 bot.on("text", async (ctx) => {
@@ -89,9 +89,8 @@ bot.on("sticker", async (ctx) => {
   functions.stickerResponse(ctx);
 });
 
-bot.catch((err) => {
-  console.log("Ooops", err);
+bot.catch((err, ctx) => {
+  console.log(`Ooops, encountered an error for ${ctx.updateType}`, err);
 });
-
-connectDB();
 bot.launch();
+connectDB();

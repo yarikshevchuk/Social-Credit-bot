@@ -1,33 +1,27 @@
 module.exports = class DataProcessing {
-  constructor(message) {
-    this.message = message;
-  }
-
-  extractReceiverData() {
+  static extractReceiverData(message) {
     let {
       reply_to_message: {
-        from: { id, username, first_name, last_name },
+        from: { id, username, first_name },
       },
-    } = this.message;
+    } = message;
 
     return {
       _id: id,
       username: username,
       first_name: first_name,
-      last_name: last_name,
     };
   }
 
-  extractSenderData() {
+  static extractSenderData(message) {
     let {
-      from: { id, username, first_name, last_name },
-    } = this.message;
+      from: { id, username, first_name },
+    } = message;
 
     return {
       _id: id,
       username: username,
       first_name: first_name,
-      last_name: last_name,
     };
   }
 };
