@@ -7,7 +7,7 @@
   },
   "help": {
     "response": {
-      "start": "To use this bot you have to install the stickers by the link: ",
+      "start": "To use this bot you have to install the stickers by the link:",
       "end": "Then just reply to the message of a person, whose social rating you want to change, using an appropriate sticker"
     }
   },
@@ -59,6 +59,9 @@
         "end": "Social Credit points but the code has expired."
       }
     }
+  },
+  "banned": {
+    "response": "is banned!"
   },
   "error": {
     "commandForGroupChats": {

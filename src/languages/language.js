@@ -4,11 +4,9 @@ const chinese = require("./chi.json");
 const ChatSchema = require("../models/chatModel");
 
 class Language {
-  constructor(message) {
-    this.message = message;
-  }
-  async select() {
-    let language = await this._getLanguage();
+  static async select(ctx) {
+    const message = ctx.message;
+    let language = await this._getLanguage(ctx);
 
     if (language === "ua") {
       return ua;
@@ -18,9 +16,11 @@ class Language {
       return eng;
     }
   }
-  async _getLanguage() {
+  static async _getLanguage(ctx) {
     try {
-      const chats = await ChatSchema.where("_id").equals(this.message.chat.id);
+      const message = ctx.message;
+
+      const chats = await ChatSchema.where("_id").equals(message.chat.id);
       const chat = chats[0];
 
       let language = "eng";
