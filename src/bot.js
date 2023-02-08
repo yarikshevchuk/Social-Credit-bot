@@ -1,7 +1,8 @@
-const { Telegraf, Scenes, session } = require("telegraf");
+const { Telegraf, Scenes, session, TelegramError } = require("telegraf");
 const Functions = require("./functions");
 const dotenv = require("dotenv").config();
 const mongoose = require("mongoose");
+require("./automatedTasks/index");
 
 const token = dotenv.parsed.TOKEN;
 const bot = new Telegraf(token); // there we place a token from bot father
@@ -15,8 +16,7 @@ bot.use(stage.middleware());
 const connectDB = async () => {
   try {
     await mongoose.connect(process.env.MONGO); // connecting to the database
-    console.log("db connected");
-    console.log("Connection completed");
+    console.log("Connected to DB");
   } catch (error) {
     console.log("Failed to connect to MongoDB", error);
   }
@@ -24,69 +24,120 @@ const connectDB = async () => {
 
 // Bot start command
 bot.command("start", async (ctx) => {
-  await functions.start(ctx);
+  try {
+    await functions.start(ctx);
+  } catch (error) {
+    console.log(error);
+  }
 });
 
 // Help command
 bot.command("help", async (ctx) => {
-  await functions.help(ctx);
+  try {
+    await functions.help(ctx);
+  } catch (error) {
+    console.log(error);
+  }
 });
 
 // Your rating command
 bot.command("my_social_credit", async (ctx) => {
-  await functions.mySocialCredit(ctx);
+  try {
+    await functions.mySocialCredit(ctx);
+  } catch (error) {
+    console.log(error);
+  }
 });
 
 // command for testing
 bot.command("aboba", async (ctx) => {
-  await functions.aboba(ctx);
+  try {
+    await functions.aboba(ctx);
+  } catch (error) {
+    console.log(error);
+  }
 });
 
 // members rating command
 bot.command("members_social_credit", async (ctx) => {
-  await functions.membersSocialCredit(ctx);
+  try {
+    await functions.membersSocialCredit(ctx);
+  } catch (error) {
+    console.log(error);
+  }
 });
 
 // command sending language
 bot.command("language", async (ctx) => {
-  await functions.chooseLanguage(ctx);
+  try {
+    await functions.chooseLanguage(ctx);
+  } catch (error) {
+    console.log(error);
+  }
 });
 
 // reacting to a user chosing one of the buttons
 bot.on("callback_query", async (ctx) => {
-  await functions.changeLanguage(ctx);
+  try {
+    await functions.changeLanguage(ctx);
+  } catch (error) {
+    console.log(error);
+  }
 });
 
 // login command
 bot.command("login", async (ctx) => {
-  await functions.login(ctx);
+  try {
+    await functions.login(ctx);
+  } catch (error) {
+    console.log(error);
+  }
 });
 
 // asking user to enter promocode: 1st part
 promocode.enter(async (ctx) => {
-  await functions.enterPromocode(ctx);
+  try {
+    await functions.enterPromocode(ctx);
+  } catch (error) {
+    console.log(error);
+  }
 });
 
 // handling entered data: 2nd part
 promocode.on("text", async (ctx) => {
-  await functions.handlePromocode(ctx);
-  return ctx.scene.leave();
+  try {
+    await functions.handlePromocode(ctx);
+    return ctx.scene.leave();
+  } catch (error) {
+    console.log(error);
+  }
 });
 
 // declaring the command to enter a promocode: 3rd part
-bot.command(
-  "enter_promocode",
-  async (ctx) => await ctx.scene.enter("promocode")
-);
+bot.command("enter_promocode", async (ctx) => {
+  try {
+    await ctx.scene.enter("promocode");
+  } catch (error) {
+    console.log(error);
+  }
+});
 
 // reacting to a message
 bot.on("text", async (ctx) => {
-  await functions.textResponse(ctx);
+  try {
+    await functions.textResponse(ctx);
+  } catch (error) {
+    console.log(error);
+  }
 });
 
 // reacting to a sticker
 bot.on("sticker", async (ctx) => {
-  functions.stickerResponse(ctx);
+  try {
+    functions.stickerResponse(ctx);
+  } catch (error) {
+    console.log(error);
+  }
 });
 
 bot.catch((err, ctx) => {

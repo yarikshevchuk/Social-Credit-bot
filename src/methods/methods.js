@@ -6,17 +6,16 @@ const Language = require("../languages/language");
 const { betterConsoleLog } = require("telegram/Helpers");
 
 module.exports = class UserMethods {
-  constructor(message) {
-    this.message = message;
-  }
-
-  async addUser(currentRating, data = null) {
+  static async addUser(ctx, rating, target = "sender") {
     try {
+      const message = ctx.message;
+
       let userData;
-      if (data) {
-        userData = data;
+
+      if (target == "receiver") {
+        userData = DataProcessing.extractReceiverData(message);
       } else {
-        userData = DataProcessing.extractSenderData(this.message);
+        userData = DataProcessing.extractSenderData(message);
       }
 
       let users = await UserModel.where("_id").equals(userData._id);
@@ -32,7 +31,7 @@ module.exports = class UserMethods {
         first_name: userData.first_name,
         roles: [userRole.value],
         rating: {
-          currentRating: currentRating,
+          currentRating: rating,
           prevRating: 0,
         },
         giftsCountdown: {
@@ -42,7 +41,6 @@ module.exports = class UserMethods {
         },
         usedPromocodes: [],
         bannedUntil: 0,
-        ratingChangeLimit: 5000,
       });
       console.log("user added");
     } catch (error) {
@@ -50,13 +48,15 @@ module.exports = class UserMethods {
     }
   }
 
-  async getUser(target) {
+  static async getUser(ctx, target) {
+    const message = ctx.message;
+
     let userData;
 
     if (target === "receiver") {
-      userData = DataProcessing.extractReceiverData(this.message);
+      userData = DataProcessing.extractReceiverData(message);
     } else if (target === "sender") {
-      userData = DataProcessing.extractSenderData(this.message);
+      userData = DataProcessing.extractSenderData(message);
     } else {
       return;
     }
@@ -73,8 +73,9 @@ module.exports = class UserMethods {
     return user;
   }
 
-  async updateSomebodysRating(message, rating) {
+  static async updateSomebodysRating(ctx, rating) {
     try {
+      const message = ctx.message;
       // extracting data from message
       let senderData = DataProcessing.extractSenderData(message);
       let receiverData = DataProcessing.extractReceiverData(message);
@@ -85,11 +86,12 @@ module.exports = class UserMethods {
       // Looking for sender, if user dosn't exist, we add sender data to db
       let sender = await UserModel.findOne({ _id: senderData._id });
       if (!sender) {
-        await this.addUser(0, senderData);
-        await this.updateChat("sender");
+        await this.addUser(ctx, 0, "sender");
+        await this.updateChat(ctx, "sender");
         sender = await UserModel.findOne({ _id: senderData._id });
       }
-      if (await this._isBanned(sender)) {
+      // if sender is banned, we return
+      if (await this._isBanned(ctx, sender)) {
         console.log(`${sender.username || sender.first_name} is banned`);
         return;
       }
@@ -110,11 +112,12 @@ module.exports = class UserMethods {
       // looking for receiver, if user doesn't exist, we add receiver data to db
       let receiver = await UserModel.findOne({ _id: receiverData._id });
       if (!receiver) {
-        await this.addUser(rating, receiverData);
-        await this.updateChat("receiver");
+        await this.addUser(ctx, rating, "receiver");
+        await this.updateChat(ctx, "receiver");
         receiver = await UserModel.findOne({ _id: receiverData._id });
       }
-      if (await this._isBanned(receiver)) {
+      // if receiver is banned, we return
+      if (await this._isBanned(ctx, receiver)) {
         console.log(`${receiver.username || receiver.first_name} is banned`);
         return;
       }
@@ -125,7 +128,7 @@ module.exports = class UserMethods {
       // якщо рейтинг користувача нижче нуля, тоді не можна змінювати відлік подарунку
       // if (receiver.rating.currentRating < 0) {
       //   await receiver.save();
-      //   return await this.updateChat("receiver");
+      //   return await this.updateChat(ctx, "receiver");
       // }
 
       receiver.giftsCountdown.smallGift -= rating;
@@ -133,7 +136,7 @@ module.exports = class UserMethods {
       receiver.giftsCountdown.bigGift -= rating;
 
       await receiver.save();
-      await this.updateChat("receiver");
+      await this.updateChat(ctx, "receiver");
       await sender.save();
       console.log("data updated");
     } catch (error) {
@@ -141,19 +144,20 @@ module.exports = class UserMethods {
     }
   }
 
-  async updateChat(target) {
+  static async updateChat(ctx, target) {
     try {
+      const message = ctx.message;
       let userData;
 
       if (target === "receiver") {
-        userData = DataProcessing.extractReceiverData(this.message);
+        userData = DataProcessing.extractReceiverData(message);
       } else if (target === "sender") {
-        userData = DataProcessing.extractSenderData(this.message);
+        userData = DataProcessing.extractSenderData(message);
       } else {
         return;
       }
 
-      const chats = await ChatModel.where("_id").equals(this.message.chat.id);
+      const chats = await ChatModel.where("_id").equals(message.chat.id);
       const chat = chats[0];
 
       if (chat) {
@@ -162,10 +166,10 @@ module.exports = class UserMethods {
         return await chat.save();
       }
 
-      if (this.message.chat.type === "private") return;
+      if (message.chat.type === "private") return;
 
       const createdChat = await ChatModel.create({
-        _id: this.message.chat.id,
+        _id: message.chat.id,
       });
       createdChat.users.push(userData._id);
       await createdChat.save();
@@ -174,21 +178,22 @@ module.exports = class UserMethods {
     }
   }
 
-  async changeLanguage(data) {
+  static async changeLanguage(ctx, selectedLanguage) {
     try {
-      const chats = await ChatModel.where("_id").equals(this.message.chat.id);
+      const message = ctx.update.callback_query.message;
+      const chats = await ChatModel.where("_id").equals(message.chat.id);
       const chat = chats[0];
 
       if (chat) {
-        chat.language = data;
+        chat.language = selectedLanguage;
         await chat.save();
       } else {
-        if (this.message.chat.type === "private") return;
+        if (message.chat.type === "private") return;
 
         const chat = await ChatModel.create({
-          _id: this.message.chat.id,
+          _id: message.chat.id,
         });
-        chat.language = data;
+        chat.language = selectedLanguage;
         await chat.save();
       }
     } catch (error) {
@@ -196,10 +201,11 @@ module.exports = class UserMethods {
     }
   }
 
-  async getUsers() {
+  static async getUsers(ctx) {
     try {
+      const message = ctx.message;
       const chats = await ChatModel.where("_id")
-        .equals(this.message.chat.id)
+        .equals(message.chat.id)
         .populate("users");
 
       const usersList = chats[0].users;
@@ -210,10 +216,11 @@ module.exports = class UserMethods {
     }
   }
 
-  async printUsers(usersList) {
+  static async printUsers(ctx, usersList) {
     try {
-      const lang = new Language(this.message);
-      let language = await lang.select();
+      const message = ctx.message;
+
+      let language = await Language.select(ctx);
 
       let response = `${language.printUsers.response}`;
 
@@ -233,15 +240,7 @@ module.exports = class UserMethods {
     }
   }
 
-  // async sortUsers() {
-  //   await UserSchema.aggregate([
-  //     { $group: { _id: "$username" } },
-  //     { $limit: 50 },
-  //     { $sort: { currentRating: -1 } },
-  //   ]);
-  // }
-
-  _sortArr(a, b) {
+  static _sortArr(a, b) {
     if (a.rating.currentRating > b.rating.currentRating) {
       return -1;
     } else if (a.rating.currentRating < b.rating.currentRating) {
@@ -251,17 +250,22 @@ module.exports = class UserMethods {
     }
   }
 
-  async _isBanned(user) {
-    console.log(user.bannedUntil, Date.now());
+  static async _isBanned(ctx, user) {
+    const message = ctx.message;
+
+    let language = await Language.select(ctx);
 
     if (!(user.bannedUntil > Date.now())) return false;
 
     if (user.rating) user.rating.currentRating = 0;
+    await ctx.reply(
+      `${user.username || user.first_name} ${language.banned.response}`
+    );
     await user.save();
     return true;
   }
 
-  async aboba(ctx) {
+  static async aboba(ctx) {
     try {
       const today = new Date().setHours(0, 0, 0, 0);
       const tomorrow = today + 24 * 60 * 60 * 1000;
