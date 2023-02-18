@@ -11,8 +11,7 @@ class Gifts {
     let gift = this.chooseGift() ? this.chooseGift() : null;
     if (!gift) return;
 
-    const lang = new Language(this.message);
-    let language = await lang.select();
+    let language = await Language.select(this.ctx);
 
     await this.ctx.telegram.sendMessage(
       this.message.chat.id,
