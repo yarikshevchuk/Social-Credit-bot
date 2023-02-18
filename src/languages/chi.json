@@ -60,6 +60,9 @@
       }
     }
   },
+  "banned": {
+    "response": "被禁止"
+  },
   "error": {
     "commandForGroupChats": {
       "response": "此命令是为群聊创建的"
