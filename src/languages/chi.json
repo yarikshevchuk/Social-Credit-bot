@@ -72,6 +72,9 @@
     },
     "userDoesntExist": {
       "response": "您尚未被社会信用系统跟踪"
+    },
+    "chatDoesntExist": {
+      "response": "尚未跟踪此聊天"
     }
   }
 }

@@ -21,24 +21,42 @@ const userSchema = new mongoose.Schema({
   giftsCountdown: {
     smallGift: {
       type: Number,
-      default: 300,
+      default: 1000,
     },
     averageGift: {
       type: Number,
-      default: 1000,
+      default: 5000,
     },
     bigGift: {
       type: Number,
-      default: 5000,
+      default: 10000,
+    },
+    majesticGift: {
+      type: Number,
+      default: 50000,
+    },
+    magnificentGift: {
+      type: Number,
+      default: 100000,
+    },
+    unsurpassedGift: {
+      type: Number,
+      default: 500000,
+    },
+    unimaginableGift: {
+      type: Number,
+      default: 1000000,
     },
   },
   usedPromocodes: [{ type: String, ref: "promocodes" }],
   bannedUntil: { type: Number, default: 0 },
   ratingChangeLimit: {
-    limit: { type: Number, default: 5000 },
-    todayLimit: { type: Number, default: 5000 },
+    limit: { type: Number, default: 3000 },
+    todayLimit: { type: Number, default: 3000 },
     updateAfter: { type: Number, default: tomorrow },
   },
+  chats: [{ type: Number, ref: "chats" }],
+  env: { type: mongoose.Schema.Types.ObjectId, ref: "environments" },
 });
 
 module.exports = mongoose.model("users", userSchema);

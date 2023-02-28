@@ -49,10 +49,26 @@ bot.command("my_social_credit", async (ctx) => {
   }
 });
 
-// command for testing
+// admin commands
 bot.command("aboba", async (ctx) => {
   try {
     await functions.aboba(ctx);
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+bot.command("delete_other_me", async (ctx) => {
+  try {
+    await functions.deleteOtherMe(ctx);
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+bot.command("share_my_data", async (ctx) => {
+  try {
+    await functions.shareMyData(ctx);
   } catch (error) {
     console.log(error);
   }
@@ -122,15 +138,6 @@ bot.command("enter_promocode", async (ctx) => {
   }
 });
 
-// reacting to a message
-bot.on("text", async (ctx) => {
-  try {
-    await functions.textResponse(ctx);
-  } catch (error) {
-    console.log(error);
-  }
-});
-
 // reacting to a sticker
 bot.on("sticker", async (ctx) => {
   try {
@@ -140,8 +147,17 @@ bot.on("sticker", async (ctx) => {
   }
 });
 
+// reacting to a message
+bot.on("message", async (ctx) => {
+  try {
+    await functions.messageResponse(ctx);
+  } catch (error) {
+    console.log(error);
+  }
+});
+
 bot.catch((err, ctx) => {
-  console.log(`Ooops, encountered an error for ${ctx.updateType}`, err);
+  console.error(`Ooops, encountered an error for ${ctx.updateType}`, err);
 });
 bot.launch();
 connectDB();

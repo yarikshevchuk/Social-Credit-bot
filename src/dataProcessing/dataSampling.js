@@ -1,5 +1,6 @@
 module.exports = class DataProcessing {
-  static extractReceiverData(message) {
+  static async extractReceiverData(message) {
+    console.log(message);
     let {
       reply_to_message: {
         from: { id, username, first_name },
@@ -13,7 +14,7 @@ module.exports = class DataProcessing {
     };
   }
 
-  static extractSenderData(message) {
+  static async extractSenderData(message) {
     let {
       from: { id, username, first_name },
     } = message;

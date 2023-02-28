@@ -72,6 +72,9 @@
     },
     "userDoesntExist": {
       "response": "Система поки що не слідкує за вами"
+    },
+    "chatDoesntExist": {
+      "response": "Цей чат поки що не відслідковується."
     }
   }
 }

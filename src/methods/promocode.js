@@ -1,6 +1,5 @@
 const DataProcessing = require("../dataProcessing/dataSampling");
 const UserModel = require("../models/userModel");
-const Language = require("../languages/language");
 
 module.exports = class PromocodeMethods {
   static async updateRating(message, rating) {
