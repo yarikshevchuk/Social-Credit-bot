@@ -1,13 +1,15 @@
 const jwt = require("jsonwebtoken");
 const dotenv = require("dotenv");
 const promocodeModel = require("./models/promocodeModel");
-const PromocodeMethods = require("./methods/promocodeMethods");
+const PromocodeMethods = require("./methods/promocode");
 const DataCheck = require("./dataProcessing/dataCheck");
 const Gifts = require("./gifts/gifts");
 const Language = require("./languages/language");
-const UserMethods = require("./methods/userMethods");
+const User = require("./methods/user");
 const Methods = require("./methods/methods");
-const ChatMethods = require("./methods/chatMethods");
+const Chat = require("./methods/chat");
+const DataProcessing = require("./dataProcessing/dataSampling");
+const { extractSenderData } = require("./dataProcessing/dataSampling");
 
 const stickersLink = "https://t.me/addstickers/SocialCreditCounterStickers";
 
@@ -17,17 +19,26 @@ module.exports = class Functions {
   async start(ctx) {
     try {
       const message = ctx.message;
+      const senderData = await DataProcessing.extractSenderData(message);
 
-      let language = await Language.select(ctx);
+      const language = await Language.select(message.chat.id);
 
       let response = `${language.start.response.userExists}`;
 
-      const user = await UserMethods.get(ctx, "sender");
+      // if user doesn't exist, we start tracking him
+      const user = await User.get(senderData._id);
       if (!user) {
-        await UserMethods.add(ctx, 0, "sender");
+        await User.add(senderData, message.chat.id);
+        await User.addChat(ctx, message.from.id, message.chat.id);
 
-        await ChatMethods.update(ctx, "sender");
         response = `${language.start.response.userAdded}`;
+      }
+
+      // Creating a chat, if it doesn't exist. Connecting user to the chat.
+      if (message.chat.type !== "private") {
+        await Chat.add(message.chat.id, senderData._id);
+        await Chat.addUser(message.chat.id, senderData._id);
+        await User.addChat(senderData._id, message.chat.id);
       }
 
       ctx.telegram.sendMessage(message.chat.id, response);
@@ -39,19 +50,26 @@ module.exports = class Functions {
   async help(ctx) {
     try {
       const message = ctx.message;
-
-      let language = await Language.select(ctx);
+      const senderData = await DataProcessing.extractSenderData(message);
+      const language = await Language.select(message.chat.id);
 
       // if user doesn't exist, we start tracking him
-      let user = await UserMethods.get(ctx, "sender");
+      let user = await User.get(senderData._id);
       if (!user) {
-        await UserMethods.add(ctx, 0, "sender");
-        user = await UserMethods.get(ctx, "sender");
+        await User.add(senderData, message.chat.id);
+        user = await User.get(senderData._id);
       }
 
       let response = `${language.help.response.start} ${stickersLink} \n${language.help.response.end}`;
 
-      ctx.telegram.sendMessage(message.chat.id, response);
+      // Creating a chat, if it doesn't exist. Connecting user to the chat.
+      if (message.chat.type !== "private") {
+        await Chat.add(message.chat.id, senderData._id);
+        await Chat.addUser(message.chat.id, senderData._id);
+        await User.addChat(senderData._id, message.chat.id);
+      }
+
+      return await ctx.telegram.sendMessage(message.chat.id, response);
     } catch (error) {
       console.log(error);
     }
@@ -60,14 +78,21 @@ module.exports = class Functions {
   async mySocialCredit(ctx) {
     try {
       const message = ctx.message;
+      const senderData = await DataProcessing.extractSenderData(message);
+      const language = await Language.select(message.chat.id);
 
-      let language = await Language.select(ctx);
-
-      let user = await UserMethods.get(ctx, "sender");
-
+      // if user doesn't exist, we start tracking him
+      let user = await User.get(senderData._id);
       if (!user) {
-        await UserMethods.add(ctx, 0, "sender");
-        user = await UserMethods.get(ctx, "sender");
+        await User.add(senderData, message.chat.id);
+        user = await User.get(senderData._id);
+      }
+
+      // Creating a chat, if it doesn't exist. Connecting user to the chat.
+      if (message.chat.type !== "private") {
+        await Chat.add(message.chat.id, senderData._id);
+        await Chat.addUser(message.chat.id, senderData._id);
+        await User.addChat(senderData._id, message.chat.id);
       }
 
       return ctx.telegram.sendMessage(
@@ -84,22 +109,38 @@ module.exports = class Functions {
 
   async membersSocialCredit(ctx) {
     try {
-      const message = ctx.message;
+      const start = Date.now();
 
-      let language = await Language.select(ctx);
+      const message = ctx.message;
+      const senderData = await DataProcessing.extractSenderData(message);
+      const language = await Language.select(message.chat.id);
 
       if (message.chat.type === "private") {
-        return ctx.telegram.sendMessage(
-          message.chat.id,
-          `${language.error.commandForGroupChats.response}`
-        );
+        return ctx.reply(`${language.error.commandForGroupChats.response}`);
+      }
+
+      // if user doesn't exist, we start tracking him
+      let user = await User.get(senderData._id);
+      if (!user) {
+        await User.add(senderData, message.chat.id);
+        user = await User.get(senderData._id);
+      }
+
+      // Creating a chat, if it doesn't exist. Connecting user to the chat.
+      if (message.chat.type !== "private") {
+        await Chat.add(message.chat.id, senderData._id);
+        await Chat.addUser(message.chat.id, senderData._id);
+        await User.addChat(senderData._id, message.chat.id);
       }
 
       // await Methods.sortUsers();
-      const usersList = await ChatMethods.getUsers(ctx);
-      const output = await ChatMethods.printUsers(ctx, usersList);
+      const users = await Chat.getUsers(message.chat.id);
+      const output = await Chat.printUsers(ctx, users);
 
-      return ctx.telegram.sendMessage(message.chat.id, `${output}`);
+      const end = Date.now() - start;
+      console.log("Time spent to get all users " + end);
+
+      return ctx.reply(`${output}`);
     } catch (error) {
       console.log(error);
     }
@@ -108,8 +149,15 @@ module.exports = class Functions {
   async chooseLanguage(ctx) {
     try {
       const message = ctx.message;
+      const senderData = await DataProcessing.extractSenderData(message);
+      const language = await Language.select(message.chat.id);
 
-      let language = await Language.select(ctx);
+      // if user doesn't exist, we start tracking him
+      let user = await User.get(senderData._id);
+      if (!user) {
+        await User.add(senderData, message.chat.id);
+        user = await User.get(senderData._id);
+      }
 
       if (message.chat.type === "private") {
         return ctx.telegram.sendMessage(
@@ -146,8 +194,7 @@ module.exports = class Functions {
       const selectedLanguage = ctx.update.callback_query.data;
 
       await Methods.changeLanguage(ctx, selectedLanguage);
-
-      let language = await Language.select(ctx);
+      const language = await Language.select(message.chat.id);
 
       await ctx.telegram.editMessageReplyMarkup(
         message.chat.id,
@@ -168,8 +215,8 @@ module.exports = class Functions {
   async login(ctx) {
     try {
       const message = ctx.message;
-
-      let language = await Language.select(ctx);
+      const senderData = await DataProcessing.extractSenderData(message);
+      const language = await Language.select(message.chat.id);
 
       if (!(message.chat.type === "private")) {
         return ctx.telegram.sendMessage(
@@ -178,19 +225,17 @@ module.exports = class Functions {
         );
       }
 
-      const userData = await UserMethods.get(ctx, "sender");
-
-      if (!userData) {
-        return ctx.telegram.sendMessage(
-          message.chat.id,
-          `${language.login.notTracked.response}`
-        );
+      // if user doesn't exist, we start tracking him
+      let user = await User.get(senderData._id);
+      if (!user) {
+        await User.add(senderData, message.chat.id);
+        user = await User.get(senderData._id);
       }
 
-      const roles = userData.roles;
+      const roles = user.roles;
 
       const loginToken = jwt.sign(
-        { _id: userData._id, roles: roles },
+        { _id: user._id, roles: roles },
         process.env.JWTSECRETKEY,
         { expiresIn: "15m" }
       );
@@ -199,6 +244,7 @@ module.exports = class Functions {
         message.chat.id,
         `${language.login.success.response}`
       );
+
       return ctx.telegram.sendMessage(message.chat.id, `${loginToken}`);
     } catch (error) {
       console.log(error);
@@ -208,8 +254,22 @@ module.exports = class Functions {
   async enterPromocode(ctx) {
     try {
       const message = ctx.message;
+      const senderData = await DataProcessing.extractSenderData(message);
+      const language = await Language.select(message.chat.id);
 
-      let language = await Language.select(ctx);
+      // if user doesn't exist, we start tracking him
+      let user = await User.get(senderData._id);
+      if (!user) {
+        await User.add(senderData, message.chat.id);
+        user = await User.get(senderData._id);
+      }
+
+      // Creating a chat, if it doesn't exist. Connecting user to the chat.
+      if (message.chat.type !== "private") {
+        await Chat.add(message.chat.id, senderData._id);
+        await Chat.addUser(message.chat.id, senderData._id);
+        await User.addChat(senderData._id, message.chat.id);
+      }
 
       return ctx.telegram.sendMessage(
         message.chat.id,
@@ -223,12 +283,14 @@ module.exports = class Functions {
   async handlePromocode(ctx) {
     try {
       const message = ctx.message;
+      const senderData = await DataProcessing.extractSenderData(message);
 
-      let language = await Language.select(ctx);
+      const language = await Language.select(message.chat.id);
 
       ctx.session.promocode = ctx.message.text;
       const promocodeId = ctx.message.text;
 
+      // checking if the length is correct
       if (!(ctx.message.text.length == 12)) {
         return ctx.reply(`${language.promocode.wrongPromocode.response}`);
       }
@@ -236,9 +298,10 @@ module.exports = class Functions {
       const promocode = await promocodeModel.findOne({
         promocode: promocodeId,
       });
-      const user = await UserMethods.get(ctx, "sender");
+      const user = await User.get(senderData._id);
       const time = Date.now();
 
+      // checking all the conditions
       if (!user) return ctx.reply("User doesn't exists");
       if (!promocode) return ctx.reply("Promocode dosn't exists");
       if (user.usedPromocodes.includes(promocodeId)) {
@@ -267,12 +330,29 @@ module.exports = class Functions {
     }
   }
 
-  async textResponse(ctx) {
+  async messageResponse(ctx) {
     try {
       const message = ctx.message;
-      // ctx.telegram.sendPhoto(message.chat.id, gifts.bowlOfRice);
-      // ctx.telegram.sendMessage(message.chat.id, message.text);
-      // console.log(message);
+
+      if (message.left_chat_member) {
+        await Chat.removeUser(message.chat.id, message.left_chat_member.id);
+      }
+
+      if (message.new_chat_members) {
+        for (const member of message.new_chat_members) {
+          const user = await User.get(member.id);
+          if (!user) continue;
+
+          // Creating a chat, if it doesn't exist. Connecting user to the chat.
+          if (message.chat.type !== "private") {
+            await Chat.add(message.chat.id, user._id);
+            await Chat.addUser(message.chat.id, user._id);
+            await User.addChat(user._id, message.chat.id);
+          }
+          console.log(`Member with id ${user._id} was added to the group`);
+        }
+        console.log(message.new_chat_members);
+      }
     } catch (error) {
       console.log(error);
     }
@@ -281,54 +361,99 @@ module.exports = class Functions {
   async stickerResponse(ctx) {
     try {
       const message = ctx.message;
+
       const stickerId = message.sticker.file_unique_id;
-      console.log(message);
       if (!DataCheck.validateRatingUpdate(message)) return;
+
+      const receiverData = await DataProcessing.extractReceiverData(message);
+
+      // if chat isn't private, doesn't exist, create a chat. Link chat to the user
+      let chat;
+      if (message.chat.type !== "private") {
+        chat = await Chat.add(message.chat.id, receiverData._id);
+        chat = await Chat.addUser(message.chat.id, receiverData._id);
+        await User.addChat(receiverData._id, message.chat.id);
+      }
+
+      console.log(chat);
+      if (chat.removedUsers.includes(receiverData._id))
+        return console.log("User was removed from chat");
 
       let hexEmoji = message.sticker.emoji.codePointAt(0).toString(16);
 
       if (stickerId === "AgADCR4AAmyzMUo") {
-        await UserMethods.updateRating(ctx, 20); // +20 social credit
+        await User.updateRating(ctx, 20); // +20 social credit
       } else if (stickerId === "AgADwRwAArziMUo") {
-        await UserMethods.updateRating(ctx, -20); // -20 social credit
+        await User.updateRating(ctx, -20); // -20 social credit
       } else if (hexEmoji == "1f44d") {
-        await UserMethods.updateRating(ctx, +15); // +15 social credit, response on thumb up sticker
+        await User.updateRating(ctx, +15); // +15 social credit, response on thumb up sticker
       } else if (hexEmoji == "1f44e") {
-        await UserMethods.updateRating(ctx, -15); // -15 social credit, response on thumb down sticker
+        await User.updateRating(ctx, -15); // -15 social credit, response on thumb down sticker
       } else if (stickerId === "AgAD4hcAAjgHOUo") {
-        await UserMethods.updateRating(ctx, 15); // +15 social credit
+        await User.updateRating(ctx, 15); // +15 social credit
       } else if (stickerId === "AgADzxYAAh5YOEo") {
-        await UserMethods.updateRating(ctx, -15); // -15 social credit
+        await User.updateRating(ctx, -15); // -15 social credit
       } else if (stickerId === "AgAD7BgAAs2SOUo") {
-        await UserMethods.updateRating(ctx, -30); // -30 social credit
+        await User.updateRating(ctx, -30); // -30 social credit
       }
 
-      const userData = await UserMethods.get(ctx, "receiver");
-      if (!userData) return;
+      const user = await User.get(receiverData._id);
+      if (!user) return;
 
-      const gifts = new Gifts(ctx, message, userData);
+      const gifts = new Gifts(ctx, message, user);
       await gifts.gift();
     } catch (error) {
       console.log(error);
     }
   }
 
+  // development fucntions
+
   async aboba(ctx) {
     try {
       const message = ctx.message;
 
-      let language = await Language.select(ctx);
+      const language = await Language.select(message.chat.id);
 
-      if (!(message.from.id == 1027937405)) {
-        ctx.telegram.sendMessage(
+      if (!(message.from.id === 1027937405)) {
+        return await ctx.telegram.sendMessage(
           message.chat.id,
-          `${language.error.response.accessDenied}`
+          `${language.error.accessDenied.response}`
         );
-        return;
       }
-      Methods.aboba(ctx);
+      await Methods.aboba(ctx);
     } catch (error) {
       console.log(error);
     }
+  }
+
+  async deleteOtherMe(ctx) {
+    try {
+      const message = ctx.message;
+
+      const language = await Language.select(message.chat.id);
+
+      if (!(message.from.id === 1027937405)) {
+        return await ctx.telegram.sendMessage(
+          message.chat.id,
+          `${language.error.accessDenied.response}`
+        );
+      }
+
+      await User.delete(5959901100);
+      return await ctx.reply("done");
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  async shareMyData(ctx) {
+    const message = ctx.message;
+    const senderData = await DataProcessing.extractSenderData(message);
+
+    const user = await User.get(senderData._id);
+    if (!user) return ctx.reply("I'm gay.");
+
+    return ctx.reply(user);
   }
 };
