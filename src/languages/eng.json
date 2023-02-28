@@ -72,6 +72,9 @@
     },
     "userDoesntExist": {
       "response": "You aren't tracked by the Social Credit system yet"
+    },
+    "chatDoesntExist": {
+      "response": "This chat isn't tracked yet"
     }
   }
 }

@@ -6,8 +6,7 @@ module.exports = class Methods {
   static async changeLanguage(ctx, selectedLanguage) {
     try {
       const message = ctx.update.callback_query.message;
-      const chats = await ChatModel.where("_id").equals(message.chat.id);
-      const chat = chats[0];
+      const chat = await ChatModel.findOne({ _id: message.chat.id });
 
       if (chat) {
         chat.language = selectedLanguage;
@@ -32,12 +31,12 @@ module.exports = class Methods {
       const tomorrow = today + 24 * 60 * 60 * 1000;
 
       // await UserModel.updateMany(
-      //   { ratingChangeLimit: { $exists: true } },
+      //   {},
       //   {
       //     $set: {
       //       ratingChangeLimit: {
-      //         limit: 5000,
-      //         todayLimit: 5000,
+      //         limit: 3000,
+      //         todayLimit: 3000,
       //         updateAfter: tomorrow,
       //       },
       //     },
