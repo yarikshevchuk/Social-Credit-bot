@@ -109,7 +109,11 @@ module.exports = class User {
         sender.ratingChangeLimit.updateAfter = tomorrow;
         return await sender.save();
       }
-      sender.ratingChangeLimit.todayLimit -= Math.abs(rating); // decreasing today limit
+      // rating change value can't exceed user's todayLimit
+      if (Math.abs(rating) > sender.ratingChangeLimit.todayLimit)
+        rating = Math.sign(rating) * sender.ratingChangeLimit.limit;
+      // decreasing today limit
+      sender.ratingChangeLimit.todayLimit -= Math.abs(rating);
 
       // looking for receiver, if user doesn't exist, we add receiver data to db
       let receiver = await UserModel.findOne({ _id: receiverData._id });
