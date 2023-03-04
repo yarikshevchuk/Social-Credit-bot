@@ -1,7 +1,7 @@
 const EnvModel = require("../models/environmentModel");
 const Chat = require("./chat");
 const User = require("./user");
-const { usersTree, setUsersTree } = require("../dataProcessing/hashedTrees");
+const usersTree = require("../dataProcessing/chatsTree.js");
 
 class Environment {
   static async findById(envId) {
@@ -10,7 +10,7 @@ class Environment {
 
   static async findUserInTreeById(userId) {
     try {
-      const tree = await usersTree;
+      const tree = await usersTree.get();
       const root = tree.getRoot();
 
       return await tree.find(parseInt(userId), root);
