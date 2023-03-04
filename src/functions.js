@@ -9,7 +9,7 @@ const User = require("./methods/user");
 const Methods = require("./methods/methods");
 const Chat = require("./methods/chat");
 const DataProcessing = require("./dataProcessing/dataSampling");
-const { extractSenderData } = require("./dataProcessing/dataSampling");
+const usersTree = require("./dataProcessing/chatsTree.js");
 
 const stickersLink = "https://t.me/addstickers/SocialCreditCounterStickers";
 
@@ -407,7 +407,7 @@ module.exports = class Functions {
     }
   }
 
-  // development fucntions
+  // development functions
 
   async aboba(ctx) {
     try {
@@ -448,12 +448,51 @@ module.exports = class Functions {
   }
 
   async shareMyData(ctx) {
-    const message = ctx.message;
-    const senderData = await DataProcessing.extractSenderData(message);
+    try {
+      const message = ctx.message;
+      const senderData = await DataProcessing.extractSenderData(message);
 
-    const user = await User.get(senderData._id);
-    if (!user) return ctx.reply("I'm gay.");
+      const user = await User.get(senderData._id);
+      if (!user) return ctx.reply("I'm gay.");
 
-    return ctx.reply(user);
+      return ctx.reply(user);
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  async adjustRating(ctx) {
+    try {
+      const message = ctx.message;
+      const language = await Language.select(message.chat.id);
+
+      if (!(message.from.id === 1027937405)) {
+        return await ctx.telegram.sendMessage(
+          message.chat.id,
+          `${language.error.accessDenied.response}`
+        );
+      }
+
+      const start = Date.now();
+
+      const users = await User.getAllUsers();
+      await usersTree.set(users);
+
+      for (let i = 0; i < users.length; i++) {
+        await User.updateEnvironment(users[i]);
+        await User.adjustToEnvironment(users[i]);
+      }
+
+      const end = Date.now() - start;
+      console.log("time:", end);
+
+      return await ctx.reply(
+        `Yay, it took ${(end / 1000).toFixed(2)} seconds to update ${
+          users.length
+        } users`
+      );
+    } catch (error) {
+      console.log(error);
+    }
   }
 };

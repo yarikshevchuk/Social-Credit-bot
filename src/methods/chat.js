@@ -4,6 +4,9 @@ const Language = require("../languages/language");
 const chatModel = require("../models/chatModel");
 
 module.exports = class Chat {
+  static async findById(chatId) {
+    return await chatModel.findOne({ _id: chatId });
+  }
   static async add(chatId, userId) {
     try {
       // if chat exsits, we add userId to the array

@@ -4,7 +4,7 @@ const RoleModel = require("../models/roleModel");
 const Language = require("../languages/language");
 const Chat = require("./chat");
 const Environment = require("./environment");
-const { usersTree, setUsersTree } = require("../dataProcessing/hashedTrees");
+const usersTree = require("../dataProcessing/chatsTree.js");
 
 module.exports = class User {
   // basic user methods
@@ -34,7 +34,7 @@ module.exports = class User {
 
   static async findInTreeById(userId) {
     try {
-      const tree = await usersTree;
+      const tree = await usersTree.get();
       const root = tree.getRoot();
 
       return await tree.find(parseInt(userId), root);
@@ -97,7 +97,7 @@ module.exports = class User {
         return;
       }
 
-      // update sender's today limit if the time has passed
+      // refresh sender's today limit if the time has passed
       if (sender.ratingChangeLimit.updateAfter < Date.now()) {
         sender.ratingChangeLimit.todayLimit = sender.ratingChangeLimit.limit;
         sender.ratingChangeLimit.updateAfter = tomorrow;
@@ -109,7 +109,12 @@ module.exports = class User {
         sender.ratingChangeLimit.updateAfter = tomorrow;
         return await sender.save();
       }
-      sender.ratingChangeLimit.todayLimit -= Math.abs(rating); // decreasing today limit
+
+      // rating change value can't exceed user's todayLimit
+      if (Math.abs(rating) > sender.ratingChangeLimit.todayLimit)
+        rating = Math.sign(rating) * sender.ratingChangeLimit.limit;
+      // decreasing sender's today limit
+      sender.ratingChangeLimit.todayLimit -= Math.abs(rating);
 
       // looking for receiver, if user doesn't exist, we add receiver data to db
       let receiver = await UserModel.findOne({ _id: receiverData._id });
@@ -211,6 +216,10 @@ module.exports = class User {
       );
 
       const averageRating = await Environment.getAverageRating(user);
+
+      // return if user is by his own
+      if (averageRating === user.rating.currentRating) return user;
+
       const k = 0;
       let change = (averageRating - user.rating.currentRating) * k;
 
@@ -219,6 +228,7 @@ module.exports = class User {
       user.rating.currentRating = newRating.toFixed(8);
       await user.save();
       console.log("The rating was adjusted");
+
       return user;
     } catch (error) {
       console.log(error);

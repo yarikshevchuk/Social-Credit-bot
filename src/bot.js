@@ -2,6 +2,8 @@ const { Telegraf, Scenes, session, TelegramError } = require("telegraf");
 const Functions = require("./functions");
 const dotenv = require("dotenv").config();
 const mongoose = require("mongoose");
+const usersTree = require("./dataProcessing/chatsTree.js");
+const chatsTree = require("./dataProcessing/chatsTree.js");
 require("./automatedTasks/index");
 
 const token = dotenv.parsed.TOKEN;
@@ -15,7 +17,7 @@ bot.use(stage.middleware());
 
 const connectDB = async () => {
   try {
-    await mongoose.connect(process.env.MONGO); // connecting to the database
+    mongoose.connect(process.env.MONGO); // connecting to the database
     console.log("Connected to DB");
   } catch (error) {
     console.log("Failed to connect to MongoDB", error);
@@ -69,6 +71,14 @@ bot.command("delete_other_me", async (ctx) => {
 bot.command("share_my_data", async (ctx) => {
   try {
     await functions.shareMyData(ctx);
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+bot.command("adjustRating", async (ctx) => {
+  try {
+    await functions.adjustRating(ctx);
   } catch (error) {
     console.log(error);
   }
