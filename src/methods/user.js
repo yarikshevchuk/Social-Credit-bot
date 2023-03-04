@@ -4,7 +4,7 @@ const RoleModel = require("../models/roleModel");
 const Language = require("../languages/language");
 const Chat = require("./chat");
 const Environment = require("./environment");
-const { usersTree, setUsersTree } = require("../dataProcessing/hashedTrees");
+const usersTree = require("../dataProcessing/chatsTree.js");
 
 module.exports = class User {
   // basic user methods
@@ -34,7 +34,7 @@ module.exports = class User {
 
   static async findInTreeById(userId) {
     try {
-      const tree = await usersTree;
+      const tree = await usersTree.get();
       const root = tree.getRoot();
 
       return await tree.find(parseInt(userId), root);

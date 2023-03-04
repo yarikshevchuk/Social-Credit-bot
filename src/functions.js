@@ -9,13 +9,7 @@ const User = require("./methods/user");
 const Methods = require("./methods/methods");
 const Chat = require("./methods/chat");
 const DataProcessing = require("./dataProcessing/dataSampling");
-const { extractSenderData } = require("./dataProcessing/dataSampling");
-const {
-  usersTree,
-  chatsTree,
-  setUsersTree,
-  setChatsTree,
-} = require("./dataProcessing/hashedTrees.js");
+const usersTree = require("./dataProcessing/chatsTree.js");
 
 const stickersLink = "https://t.me/addstickers/SocialCreditCounterStickers";
 
@@ -482,7 +476,7 @@ module.exports = class Functions {
       const start = Date.now();
 
       const users = await User.getAllUsers();
-      await setUsersTree();
+      await usersTree.set(users);
 
       for (let i = 0; i < users.length; i++) {
         await User.updateEnvironment(users[i]);
