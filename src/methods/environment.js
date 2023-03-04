@@ -1,10 +1,22 @@
 const EnvModel = require("../models/environmentModel");
 const Chat = require("./chat");
 const User = require("./user");
+const { usersTree, setUsersTree } = require("../dataProcessing/hashedTrees");
 
 class Environment {
   static async findById(envId) {
     return await EnvModel.findOne({ _id: envId });
+  }
+
+  static async findUserInTreeById(userId) {
+    try {
+      const tree = await usersTree;
+      const root = tree.getRoot();
+
+      return await tree.find(parseInt(userId), root);
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   static async create(user) {
@@ -13,8 +25,22 @@ class Environment {
 
       const env = await Environment.findById(user.env);
       if (env) return env;
-      const allUsers = [];
 
+      // if user doesn't have any chats, we create empty environment for him
+      if (!user.chats || user.chats.length === 0) {
+        const newEnv = await EnvModel.create({
+          user: user._id,
+          users: [],
+        });
+        user.chats = []; // here we create empty chats array too
+        user.env = newEnv;
+        await user.save();
+
+        return newEnv;
+      }
+
+      // going through every chat and collecting users ids
+      const allUsers = [];
       for (let i = 0; i < user.chats.length; i++) {
         const chat = await Chat.findById(user.chats[i]);
         if (!chat) continue;
@@ -23,18 +49,22 @@ class Environment {
         allUsers.push(...chat.users);
       }
 
+      // getting only unique users without our target
       const uniqueUsers = new Set(allUsers);
       uniqueUsers.delete(user._id);
 
+      // array out of map object
       const users = [...uniqueUsers];
 
+      // creating new env document
       const newEnv = await EnvModel.create({
         user: user._id,
         users: users,
       });
 
+      // saving everything
       user.env = newEnv;
-      user.save();
+      await user.save();
 
       return newEnv;
     } catch (error) {
@@ -46,11 +76,19 @@ class Environment {
     try {
       if (!user) return;
 
+      // if env doesn't exist, we return
       const env = await Environment.findById(user.env);
       if (!env) return;
 
-      const allUsers = [];
+      // if user doesn't have any chats, we clear env and return it
+      if (!user.chats || user.chats.length === 0) {
+        env.users = [];
+        await env.save();
+        return env;
+      }
 
+      // going through every chat and collecting users ids
+      const allUsers = [];
       for (let i = 0; i < user.chats.length; i++) {
         const chat = await Chat.findById(user.chats[i]);
         if (!chat) continue;
@@ -83,12 +121,14 @@ class Environment {
       if (!env) return;
       let overallRating = user.rating.currentRating;
 
+      // if there are no connections, we just return user's rating
+      if (env.users.length === 0) return overallRating;
+
       for (let i = 0; i < env.users.length; i++) {
-        const envUser = await User.findInTreeById(env.users[i]);
+        const envUser = await Environment.findUserInTreeById(env.users[i]);
 
         overallRating += envUser.rating.currentRating;
       }
-      // console.log(`Environment ${user.env} rating: ${overallRating}`);
       const averageRating = (overallRating / (env.users.length + 1)).toFixed(8);
 
       return averageRating;
