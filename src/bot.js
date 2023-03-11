@@ -157,9 +157,7 @@ bot.on("sticker", async (ctx) => {
 // reacting to a message
 bot.on("message", async (ctx) => {
   try {
-    if (ctx.message.chat.if === -1001658189601) {
-      console.log(ctx.message);
-    }
+    console.log(ctx.message);
     await functions.messageResponse(ctx);
   } catch (error) {
     console.log(error);
