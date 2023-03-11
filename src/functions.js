@@ -9,7 +9,7 @@ const User = require("./methods/user");
 const Methods = require("./methods/methods");
 const Chat = require("./methods/chat");
 const DataProcessing = require("./dataProcessing/dataSampling");
-const usersTree = require("./dataProcessing/chatsTree.js");
+const usersTree = require("./dataProcessing/usersTree.js");
 
 const stickersLink = "https://t.me/addstickers/SocialCreditCounterStickers";
 
@@ -466,7 +466,7 @@ module.exports = class Functions {
       const message = ctx.message;
       const language = await Language.select(message.chat.id);
 
-      if (!(message.from.id === 1027937405)) {
+      if (!(message.from.id === 1027937405 || message.from.id === 5959901100)) {
         return await ctx.telegram.sendMessage(
           message.chat.id,
           `${language.error.accessDenied.response}`
@@ -477,7 +477,7 @@ module.exports = class Functions {
 
       const users = await User.getAllUsers();
       await usersTree.set(users);
-
+      console.log(await usersTree.get());
       for (let i = 0; i < users.length; i++) {
         await User.updateEnvironment(users[i]);
         await User.adjustToEnvironment(users[i]);

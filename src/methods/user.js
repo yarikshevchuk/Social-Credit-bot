@@ -4,7 +4,7 @@ const RoleModel = require("../models/roleModel");
 const Language = require("../languages/language");
 const Chat = require("./chat");
 const Environment = require("./environment");
-const usersTree = require("../dataProcessing/chatsTree.js");
+const usersTree = require("../dataProcessing/usersTree.js");
 
 module.exports = class User {
   // basic user methods
@@ -220,7 +220,7 @@ module.exports = class User {
       // return if user is by his own
       if (averageRating === user.rating.currentRating) return user;
 
-      const k = 0;
+      const k = 0.02;
       let change = (averageRating - user.rating.currentRating) * k;
 
       const newRating = user.rating.currentRating + change;
