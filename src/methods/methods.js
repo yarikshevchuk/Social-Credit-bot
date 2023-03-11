@@ -1,6 +1,7 @@
 const DataProcessing = require("../dataProcessing/dataSampling");
 const UserModel = require("../models/userModel");
 const ChatModel = require("../models/chatModel");
+const path = require("node:path");
 
 module.exports = class Methods {
   static async changeLanguage(ctx, selectedLanguage) {
@@ -30,6 +31,12 @@ module.exports = class Methods {
       const today = new Date().setHours(0, 0, 0, 0);
       const tomorrow = today + 24 * 60 * 60 * 1000;
 
+      const way = path.resolve(__dirname);
+      console.log(way);
+      await ctx.replyWithPhoto({
+        source:
+          "D:/Shev/Projects/Social-Credit-bot/src/assets/gifts/riceWife.jpg",
+      });
       // await UserModel.updateMany(
       //   {},
       //   {

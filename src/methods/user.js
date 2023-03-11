@@ -4,7 +4,7 @@ const RoleModel = require("../models/roleModel");
 const Language = require("../languages/language");
 const Chat = require("./chat");
 const Environment = require("./environment");
-const usersTree = require("../dataProcessing/chatsTree.js");
+const usersTree = require("../dataProcessing/usersTree.js");
 
 module.exports = class User {
   // basic user methods
