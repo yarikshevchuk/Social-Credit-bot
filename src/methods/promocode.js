@@ -4,10 +4,9 @@ const UserModel = require("../models/userModel");
 module.exports = class PromocodeMethods {
   static async updateRating(message, rating) {
     try {
-      let userData = DataProcessing.extractSenderData(message);
+      let userData = await DataProcessing.extractSenderData(message);
 
-      let users = await UserModel.where("_id").equals(userData._id);
-      let user = users[0];
+      let user = await UserModel.findOne({ _id: userData._id });
 
       user.rating.prevRating = user.rating.currentRating;
       user.rating.currentRating += rating;
