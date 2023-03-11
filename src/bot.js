@@ -2,9 +2,6 @@ const { Telegraf, Scenes, session, TelegramError } = require("telegraf");
 const Functions = require("./functions");
 const dotenv = require("dotenv").config();
 const mongoose = require("mongoose");
-const usersTree = require("./dataProcessing/chatsTree.js");
-const chatsTree = require("./dataProcessing/chatsTree.js");
-require("./automatedTasks/index");
 
 const token = dotenv.parsed.TOKEN;
 const bot = new Telegraf(token); // there we place a token from bot father
@@ -160,6 +157,9 @@ bot.on("sticker", async (ctx) => {
 // reacting to a message
 bot.on("message", async (ctx) => {
   try {
+    if (ctx.message.chat.if === -1001658189601) {
+      console.log(ctx.message);
+    }
     await functions.messageResponse(ctx);
   } catch (error) {
     console.log(error);
@@ -169,5 +169,6 @@ bot.on("message", async (ctx) => {
 bot.catch((err, ctx) => {
   console.error(`Ooops, encountered an error for ${ctx.updateType}`, err);
 });
+
 bot.launch();
 connectDB();

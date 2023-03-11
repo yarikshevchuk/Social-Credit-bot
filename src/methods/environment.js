@@ -1,7 +1,6 @@
 const EnvModel = require("../models/environmentModel");
 const Chat = require("./chat");
-const User = require("./user");
-const usersTree = require("../dataProcessing/chatsTree.js");
+const usersTree = require("../dataProcessing/usersTree.js");
 
 class Environment {
   static async findById(envId) {
@@ -120,16 +119,20 @@ class Environment {
 
       if (!env) return;
       let overallRating = user.rating.currentRating;
-
+      let length = env.users.length;
       // if there are no connections, we just return user's rating
       if (env.users.length === 0) return overallRating;
 
       for (let i = 0; i < env.users.length; i++) {
         const envUser = await Environment.findUserInTreeById(env.users[i]);
+        if (!envUser) {
+          length -= 1;
+          continue;
+        }
 
         overallRating += envUser.rating.currentRating;
       }
-      const averageRating = (overallRating / (env.users.length + 1)).toFixed(8);
+      const averageRating = (overallRating / (length + 1)).toFixed(8);
 
       return averageRating;
     } catch (error) {
