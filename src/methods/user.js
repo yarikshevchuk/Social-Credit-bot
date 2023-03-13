@@ -221,6 +221,7 @@ module.exports = class User {
       if (averageRating === user.rating.currentRating) return user;
 
       const k = 0.02;
+
       let change = (averageRating - user.rating.currentRating) * k;
 
       const newRating = user.rating.currentRating + change;
