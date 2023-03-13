@@ -56,7 +56,7 @@ module.exports = class Chat {
   static async removeUser(chatId, userId) {
     try {
       const chat = await chatModel.findOne({ _id: chatId });
-      if (!chat) return console.log("Chat doesn't exist");
+      if (!chat) return; //console.log("Chat doesn't exist");
 
       const userPosition = chat.users.indexOf(userId);
       if (userPosition < 0) return;
