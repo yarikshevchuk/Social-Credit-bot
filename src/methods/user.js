@@ -151,10 +151,8 @@ module.exports = class User {
       let user = await UserModel.findOne({ _id: userId });
 
       // quit conditions
-      if (!user)
-        return console.log("User wasn't found during attempt to add a chat");
-      if (user.chats.includes(chatId))
-        return console.log("The chat was already added");
+      if (!user) return; //console.log("User wasn't found during attempt to add a chat");
+      if (user.chats.includes(chatId)) return; //console.log("The chat was already added");
 
       user.chats.push(chatId);
       await user.save();
@@ -168,7 +166,7 @@ module.exports = class User {
   static async removeChat(userId, chatId) {
     try {
       const user = await UserModel.findOne({ _id: userId });
-      if (!user) return console.log("User doesn't exist");
+      if (!user) return; //console.log("User doesn't exist");
 
       const chatPosition = user.chats.indexOf(chatId);
       if (chatPosition < 0) return;
