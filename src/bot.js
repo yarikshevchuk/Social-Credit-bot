@@ -1,9 +1,10 @@
 const { Telegraf, Scenes, session, TelegramError } = require("telegraf");
 const Functions = require("./functions");
-const dotenv = require("dotenv").config();
+const dotenv = require("dotenv");
 const mongoose = require("mongoose");
+dotenv.config();
 
-const token = dotenv.parsed.TOKEN;
+const token = process.env.TOKEN;
 const bot = new Telegraf(token); // there we place a token from bot father
 const functions = new Functions();
 const promocode = new Scenes.BaseScene("promocode");
