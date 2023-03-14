@@ -41,7 +41,9 @@ module.exports = class BinarySearchTree {
   }
 
   find(data, node) {
-    console.log(`Data: ${data}`);
+    console.log(`Id: ${data}`);
+    console.log(`Node: ${node}`);
+
     if (this.root === null) {
       return null;
     } else if (data < node.data._id) {
