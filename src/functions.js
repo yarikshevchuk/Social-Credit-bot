@@ -477,7 +477,7 @@ module.exports = class Functions {
 
       const users = await User.getAllUsers();
       await usersTree.set(users);
-      console.log(await usersTree.get());
+
       for (let i = 0; i < users.length; i++) {
         await User.updateEnvironment(users[i]);
         await User.adjustToEnvironment(users[i]);
