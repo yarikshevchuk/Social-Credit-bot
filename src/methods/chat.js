@@ -102,9 +102,9 @@ module.exports = class Chat {
 
         response =
           response +
-          `\n${i + 1}) ${user.username || user.first_name}: ${
+          `\n${i + 1}) ${user.username || user.first_name}: ${Math.floor(
             user.rating.currentRating
-          }`;
+          )}`;
       }
 
       return response;
