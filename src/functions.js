@@ -97,7 +97,9 @@ module.exports = class Functions {
 
       return ctx.telegram.sendMessage(
         message.chat.id,
-        `${language.mySocialCredit.response} ${user.rating.currentRating}`,
+        `${language.mySocialCredit.response} ${Math.floor(
+          user.rating.currentRating
+        )}`,
         {
           reply_to_message_id: message.message_id,
         }
