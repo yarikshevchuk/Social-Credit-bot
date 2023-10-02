@@ -8,7 +8,7 @@
   "help": {
     "response": {
       "start": "To use this bot you have to install the stickers by the link:",
-      "end": "Then just reply to the message of a person, whose social rating you want to change, using an appropriate sticker"
+      "end": "Then just reply to the message of a person, whose social rating you want to change, using an appropriate sticker. The bot adjusts to your environment. That means you go up when you're chatting with high-rating players and sink when your chats are nasty. Make sure to choose the right group, you may not want to lose your rating."
     }
   },
   "mySocialCredit": {
